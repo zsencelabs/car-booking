@@ -1,15 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { RegisterForm } from "@/components/auth/register-form";
 
 export const metadata: Metadata = { title: "Create account" };
 
 export default function Page() {
   return (
-    <div className="space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
-      <div><h1 className="text-2xl font-semibold tracking-tight">Create your account</h1><p className="text-sm text-muted-foreground">Choose how you&apos;ll use the platform.</p></div>
+    <AuthShell
+      eyebrow="Create an account"
+      headline="One account."
+      accent="Every ride."
+      text="Book a ride, apply to drive, or put your fleet to work on the same platform."
+      title="Create your account"
+      subtitle="Choose how you'll use the platform."
+    >
       <RegisterForm />
-      <p className="text-center text-sm text-muted-foreground">Already have an account? <Link href="/login" className="text-brand-ink hover:underline">Log in</Link></p>
-    </div>
+      <p className="mt-7 text-center text-sm text-muted-foreground">Already have an account? <Link href="/login" className="font-medium text-brand-ink hover:underline">Log in</Link></p>
+    </AuthShell>
   );
 }

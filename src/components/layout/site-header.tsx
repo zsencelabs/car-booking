@@ -1,17 +1,12 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
 import { BRAND, MAIN_NAV } from "@/lib/config";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DesktopAccountNav, MobileAccountNav } from "./account-nav";
+import { Logo } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
-
-export function Logo() {
-  return (
-    <Link href="/" aria-label={`${BRAND.name} home`} className="text-2xl font-semibold leading-none tracking-[-0.05em]">
-      {BRAND.name}<span className="text-brand-ink">.</span>
-    </Link>
-  );
-}
 
 export function SiteHeader() {
   return (
@@ -27,13 +22,14 @@ export function SiteHeader() {
         </nav>
         <div className="hidden items-center gap-3 md:flex">
           <ThemeToggle className="size-11 rounded-full" />
-          <Link href="/login" className={buttonVariants({ variant: "ghost", className: "h-11 rounded-full px-5 text-[15px]" })}>Log in</Link>
-          <Link href="/book" className={buttonVariants({ className: "h-11 rounded-full px-6 text-[15px]" })}>Book a ride</Link>
+          <Suspense fallback={<span aria-hidden className="h-11 w-56 lg:w-90" />}>
+            <DesktopAccountNav />
+          </Suspense>
         </div>
         <div className="flex items-center gap-1 md:hidden">
-          <ThemeToggle />
+          <ThemeToggle className="size-11 rounded-full" />
           <Sheet>
-            <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Open menu" />}>
+            <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Open menu" className="size-11 rounded-full" />}>
               <Menu className="size-5" />
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
@@ -44,10 +40,9 @@ export function SiteHeader() {
                     {l.label}
                   </SheetClose>
                 ))}
-                <SheetClose render={<Link href="/drivers/register" className="rounded-lg px-3 py-2 text-sm hover:bg-muted" />}>Drive with us</SheetClose>
-                <SheetClose render={<Link href="/providers/register" className="rounded-lg px-3 py-2 text-sm hover:bg-muted" />}>Register your fleet</SheetClose>
-                <SheetClose render={<Link href="/login" className={buttonVariants({ variant: "outline", className: "mt-3" })} />}>Log in</SheetClose>
-                <SheetClose render={<Link href="/book" className={buttonVariants()} />}>Book a ride</SheetClose>
+                <Suspense fallback={null}>
+                  <MobileAccountNav />
+                </Suspense>
               </nav>
             </SheetContent>
           </Sheet>

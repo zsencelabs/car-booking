@@ -1,7 +1,6 @@
 "use client";
 
-import { FileCheck2, UploadCloud } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Check, UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DocumentRequirement } from "@/types";
 
@@ -10,15 +9,23 @@ export function FileDropzone({ doc, value, onChange, error }: { doc: DocumentReq
   const id = `doc-${doc.id}`;
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className={cn("flex cursor-pointer items-center gap-3 rounded-xl border border-dashed p-4 transition-colors hover:bg-muted/50 focus-within:ring-3 focus-within:ring-ring/50", error && "border-destructive", value && "border-primary bg-primary/5")}>
-        {value ? <FileCheck2 className="size-6 shrink-0 text-brand-ink" /> : <UploadCloud className="size-6 shrink-0 text-muted-foreground" />}
+      <label
+        htmlFor={id}
+        className={cn(
+          "flex cursor-pointer items-center gap-4 rounded-2xl bg-muted/50 p-4 transition-colors hover:bg-muted focus-within:ring-3 focus-within:ring-ring/50",
+          error && "bg-destructive/10 hover:bg-destructive/10",
+          value && "bg-primary/15 hover:bg-primary/20",
+        )}
+      >
+        <span className={cn("grid size-10 shrink-0 place-items-center rounded-full transition-colors", value ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground")}>
+          {value ? <Check className="size-4" /> : <UploadCloud className="size-4" />}
+        </span>
         <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-2 text-sm font-medium">
-            {doc.label}
-            <Badge variant={doc.required ? "default" : "secondary"}>{doc.required ? "Required" : "Optional"}</Badge>
-            {doc.conditional && <Badge variant="outline">If applicable</Badge>}
-          </span>
+          <span className="block text-sm font-medium">{doc.label}</span>
           <span className="block truncate text-xs text-muted-foreground">{value ?? doc.description ?? "PDF, JPG or PNG"}</span>
+        </span>
+        <span className="shrink-0 text-right font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+          {doc.conditional ? "If applicable" : doc.required ? "Required" : "Optional"}
         </span>
         <input id={id} type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) onChange(f.name); }} />
       </label>

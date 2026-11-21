@@ -1,13 +1,18 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { parseISO, subYears } from "date-fns";
 import { z } from "zod";
+import { DatePicker, formatDateLabel } from "@/components/common/date-picker";
 import { FormField } from "@/components/common/field";
+import { PhoneInput } from "@/components/common/phone-input";
+import { PasswordInput } from "@/components/common/password-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DRIVER_DOCUMENTS } from "@/lib/mock/document-requirements";
+import { phoneSchema } from "@/lib/phone";
 import { FileDropzone } from "./file-dropzone";
 import { ReviewList, Wizard, type WizardStep } from "./wizard";
 
@@ -15,10 +20,10 @@ const eighteenYearsAgo = () => { const d = new Date(); d.setFullYear(d.getFullYe
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
-  phone: z.string().regex(/^\+?[\d\s()-]{10,}$/, "Enter a valid phone number"),
+  phone: phoneSchema,
   password: z.string().min(8, "At least 8 characters"),
   legalName: z.string().trim().min(2, "Legal full name is required"),
-  dob: z.string().min(1, "Date of birth is required").refine((v) => new Date(v) <= eighteenYearsAgo(), "You must be at least 18"),
+  dob: z.string().min(1, "Date of birth is required").refine((v) => parseISO(v) <= eighteenYearsAgo(), "You must be at least 18"),
   street: z.string().trim().min(3, "Street address is required"),
   city: z.string().trim().min(2, "City is required"),
   state: z.string().regex(/^[A-Za-z]{2}$/, "2-letter state"),
@@ -27,7 +32,7 @@ const schema = z.object({
   consentBackground: z.boolean().refine((v) => v, "Consent is required to proceed"),
   consentAccuracy: z.boolean().refine((v) => v, "Please confirm your information is accurate"),
   emergencyName: z.string().trim().min(2, "Contact name is required"),
-  emergencyPhone: z.string().regex(/^\+?[\d\s()-]{10,}$/, "Enter a valid phone number"),
+  emergencyPhone: phoneSchema,
   emergencyRelation: z.string().trim().min(2, "Relationship is required"),
 }).superRefine((v, ctx) => {
   DRIVER_DOCUMENTS.filter((d) => d.required && !d.conditional).forEach((d) => {
@@ -40,7 +45,7 @@ export function DriverWizard() {
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     mode: "onTouched",
-    defaultValues: { docs: {}, consentBackground: false, consentAccuracy: false },
+    defaultValues: { dob: "", docs: {}, consentBackground: false, consentAccuracy: false },
   });
   const reg = form.register;
   const e = form.formState.errors;
@@ -48,12 +53,12 @@ export function DriverWizard() {
   const steps: WizardStep<Values>[] = [
     { id: "account", title: "Create your account", fields: ["email", "phone", "password"], render: () => (<>
       <FormField id="email" label="Email" error={e.email}><Input id="email" type="email" autoComplete="email" {...reg("email")} aria-invalid={!!e.email} /></FormField>
-      <FormField id="phone" label="Mobile phone" error={e.phone}><Input id="phone" type="tel" autoComplete="tel" {...reg("phone")} aria-invalid={!!e.phone} /></FormField>
-      <FormField id="password" label="Password" error={e.password} hint="At least 8 characters"><Input id="password" type="password" autoComplete="new-password" {...reg("password")} aria-invalid={!!e.password} /></FormField>
+      <FormField id="phone" label="Mobile phone" error={e.phone}><Controller name="phone" control={form.control} render={({ field }) => <PhoneInput id="phone" value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} aria-invalid={!!e.phone} />} /></FormField>
+      <FormField id="password" label="Password" error={e.password} hint="At least 8 characters"><PasswordInput id="password"autoComplete="new-password" {...reg("password")} aria-invalid={!!e.password} /></FormField>
     </>) },
     { id: "personal", title: "Personal information", description: "Must match your government-issued ID.", fields: ["legalName", "dob", "street", "city", "state", "zip"], render: () => (<>
       <FormField id="legalName" label="Legal full name" error={e.legalName}><Input id="legalName" autoComplete="name" {...reg("legalName")} aria-invalid={!!e.legalName} /></FormField>
-      <FormField id="dob" label="Date of birth" error={e.dob}><Input id="dob" type="date" {...reg("dob")} aria-invalid={!!e.dob} /></FormField>
+      <FormField id="dob" label="Date of birth" error={e.dob}><Controller name="dob" control={form.control} render={({ field }) => <DatePicker id="dob" startView="year" placeholder="Select your date of birth" min={subYears(new Date(), 100)} max={eighteenYearsAgo()} rangeMessage="You must be at least 18" value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} aria-invalid={!!e.dob} />} /></FormField>
       <FormField id="street" label="Residential address" error={e.street}><Input id="street" autoComplete="street-address" {...reg("street")} aria-invalid={!!e.street} /></FormField>
       <div className="grid grid-cols-[1fr_5rem_6rem] gap-3">
         <FormField id="city" label="City" error={e.city}><Input id="city" {...reg("city")} aria-invalid={!!e.city} /></FormField>
@@ -78,11 +83,11 @@ export function DriverWizard() {
     </>) },
     { id: "emergency", title: "Emergency contact", fields: ["emergencyName", "emergencyPhone", "emergencyRelation"], render: () => (<>
       <FormField id="emergencyName" label="Contact name" error={e.emergencyName}><Input id="emergencyName" {...reg("emergencyName")} aria-invalid={!!e.emergencyName} /></FormField>
-      <FormField id="emergencyPhone" label="Contact phone" error={e.emergencyPhone}><Input id="emergencyPhone" type="tel" {...reg("emergencyPhone")} aria-invalid={!!e.emergencyPhone} /></FormField>
+      <FormField id="emergencyPhone" label="Contact phone" error={e.emergencyPhone}><Controller name="emergencyPhone" control={form.control} render={({ field }) => <PhoneInput id="emergencyPhone" autoComplete="off" value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} aria-invalid={!!e.emergencyPhone} />} /></FormField>
       <FormField id="emergencyRelation" label="Relationship" error={e.emergencyRelation}><Input id="emergencyRelation" {...reg("emergencyRelation")} aria-invalid={!!e.emergencyRelation} /></FormField>
     </>) },
     { id: "review", title: "Review and submit", fields: [], render: (f) => { const v = f.getValues(); return (
-      <ReviewList rows={[["Email", v.email], ["Legal name", v.legalName], ["Date of birth", v.dob], ["Address", `${v.street}, ${v.city}, ${v.state?.toUpperCase()} ${v.zip}`], ["Documents uploaded", String(Object.keys(v.docs).length)], ["Emergency contact", `${v.emergencyName} (${v.emergencyRelation})`]]} />
+      <ReviewList rows={[["Email", v.email], ["Legal name", v.legalName], ["Date of birth", formatDateLabel(v.dob)], ["Address", `${v.street}, ${v.city}, ${v.state?.toUpperCase()} ${v.zip}`], ["Documents uploaded", String(Object.keys(v.docs).length)], ["Emergency contact", `${v.emergencyName} (${v.emergencyRelation})`]]} />
     ); } },
   ];
 

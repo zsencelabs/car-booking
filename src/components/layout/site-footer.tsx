@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { BRAND, FOOTER_NAV } from "@/lib/config";
-import { Logo } from "./site-header";
+import { Logo } from "./logo";
 
 async function CurrentYear() {
   "use cache";

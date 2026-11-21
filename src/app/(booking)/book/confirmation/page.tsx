@@ -57,7 +57,7 @@ async function ConfirmationPageContent({ searchParams }: Pick<PageProps<"/book/c
           </div>
           <PostRidePreview fare={fare} />
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/" className={buttonVariants({ variant: "outline", className: "h-9 px-4" })}>Back to home</Link>
+            <Link href="/" className={buttonVariants({ variant: "outline" })}>Back to home</Link>
             <Link href="/safety" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"><ShieldAlert className="size-4" /> Report a safety issue</Link>
           </div>
         </div>

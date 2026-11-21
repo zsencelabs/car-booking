@@ -16,7 +16,7 @@ export default function Page() {
           <BookingWalkthrough />
         </MotionProvider>
         <div className="mt-12 text-center">
-          <Link href="/book" className={buttonVariants({ size: "lg", className: "h-11 px-6" })}>Book a ride</Link>
+          <Link href="/book" className={buttonVariants({ size: "lg", className: "px-6" })}>Book a ride</Link>
         </div>
       </Section>
     </>

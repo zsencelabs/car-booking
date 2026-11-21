@@ -55,7 +55,7 @@ export function PaymentForm({ confirmHref }: { confirmHref: string }) {
         </div>
         {err("terms")}
       </div>
-      <Button type="submit" size="lg" className="h-11 w-full text-base" disabled={isSubmitting}>Confirm booking</Button>
+      <Button type="submit" size="lg" className="w-full text-base" disabled={isSubmitting}>Confirm booking</Button>
     </form>
   );
 }

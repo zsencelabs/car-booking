@@ -15,7 +15,7 @@ export function BookingSummary({ draft, category }: { draft: BookingDraft; categ
       <dl className="space-y-3 text-sm">
         <div className="flex gap-3"><MapPin className="mt-0.5 size-4 shrink-0 text-brand-ink" /><div><dt className="text-xs text-muted-foreground">Pickup</dt><dd>{draft.pickup || "—"}</dd></div></div>
         <div className="flex gap-3"><Navigation className="mt-0.5 size-4 shrink-0 text-brand-ink" /><div><dt className="text-xs text-muted-foreground">Destination</dt><dd>{draft.destination || "—"}</dd></div></div>
-        <div className="flex gap-3"><CalendarDays className="mt-0.5 size-4 shrink-0 text-brand-ink" /><div><dt className="text-xs text-muted-foreground">{trip}</dt><dd>{draft.tripType === "immediate" ? "As soon as possible" : `${draft.date} at ${draft.time}`}</dd></div></div>
+        <div className="flex gap-3"><CalendarDays className="mt-0.5 size-4 shrink-0 text-brand-ink" /><div><dt className="text-xs text-muted-foreground">{trip}</dt><dd>{draft.tripType === "immediate" ? "As soon as possible" : draft.date ? `${draft.date} at ${draft.time}` : "Choose a date and time"}</dd></div></div>
       </dl>
       <div className="border-t pt-3 text-sm text-muted-foreground">{miles} mi · about {minutes} min{round ? " each way" : ""}</div>
       {category && fare !== undefined && (

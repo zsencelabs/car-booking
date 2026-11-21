@@ -18,7 +18,7 @@ export function draftToParams(d: Partial<BookingDraft>) {
 type Params = { get(name: string): string | null };
 
 export function draftFromParams(p: Params): BookingDraft {
-  const tripType = (p.get("tripType") as TripType) || "immediate";
+  const tripType = (p.get("tripType") as TripType) || "scheduled";
   return {
     pickup: p.get("pickup") ?? "",
     destination: p.get("destination") ?? "",

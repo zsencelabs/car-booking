@@ -153,6 +153,35 @@
   line-height: 0.95;
 }
 
+/* Two overlapping range inputs: only the handles take pointer input. */
+@layer components {
+  .range-thumb::-webkit-slider-runnable-track { background: transparent; }
+  .range-thumb::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    pointer-events: auto;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    background: var(--primary);
+    border: 2px solid var(--foreground);
+    cursor: grab;
+    transition: transform 150ms;
+  }
+  .range-thumb::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  .range-thumb:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+  .range-thumb::-moz-range-track { background: transparent; }
+  .range-thumb::-moz-range-thumb {
+    pointer-events: auto;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    background: var(--primary);
+    border: 2px solid var(--foreground);
+    cursor: grab;
+  }
+}
+
 /* Fine film grain for dark bands. */
 /* Fades a map layer into the page on every edge (no hard box). */
 @utility map-fade {

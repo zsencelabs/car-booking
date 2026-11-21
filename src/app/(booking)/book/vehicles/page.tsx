@@ -43,7 +43,7 @@ async function VehiclesPageContent({ searchParams }: Pick<PageProps<"/book/vehic
                 </div>
                 <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
                   <span className="text-xl font-semibold">{usd(estimateFare(c, miles, minutes, round))}</span>
-                  <Link href={href} className={buttonVariants({ className: "h-9 px-4" })}>Select</Link>
+                  <Link href={href} className={buttonVariants()}>Select</Link>
                 </div>
               </div>
             );

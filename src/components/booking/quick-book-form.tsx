@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeftRight, ArrowRight, ArrowUpDown, CalendarDays, Clock, Minus, Plus, Search, Users } from "lucide-react";
 import { z } from "zod";
@@ -26,6 +26,12 @@ const schema = z.object({
   if (!v.time) ctx.addIssue({ code: "custom", path: ["time"], message: "Choose a time" });
 });
 
+/** Today in the visitor's timezone, as YYYY-MM-DD. */
+function localToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export function QuickBookForm({
   initial, submitLabel = "See vehicles and prices", className, layout = "card",
 }: { initial?: BookingDraft; submitLabel?: string; className?: string; layout?: "card" | "bar" }) {
@@ -36,6 +42,14 @@ export function QuickBookForm({
   const set = <K extends keyof BookingDraft>(k: K, v: BookingDraft[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const scheduled = draft.tripType !== "immediate";
   const locationError = errors.pickup ?? errors.destination;
+
+  // Filled after mount so server and client render the same initial HTML.
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setDraft((d) => (d.tripType !== "immediate" && !d.date ? { ...d, date: localToday() } : d));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +69,7 @@ export function QuickBookForm({
 
   function pickTripType(v: TripType) {
     set("tripType", v);
-    if (v !== "immediate" && !draft.date) set("date", new Date().toISOString().slice(0, 10));
+    if (v !== "immediate" && !draft.date) set("date", localToday());
   }
 
   if (layout === "bar") {
@@ -165,10 +179,7 @@ export function QuickBookForm({
           return (
             <button
               key={t.value} type="button" role="tab" aria-selected={selected}
-              onClick={() => {
-                set("tripType", t.value as TripType);
-                if (t.value !== "immediate" && !draft.date) set("date", new Date().toISOString().slice(0, 10));
-              }}
+              onClick={() => pickTripType(t.value as TripType)}
               className={cn("relative rounded-lg px-1 py-1.5 text-[13px] font-medium transition-colors sm:px-2 sm:text-sm",
                 selected ? "text-foreground" : "text-muted-foreground hover:text-foreground")}
             >
@@ -233,10 +244,10 @@ export function QuickBookForm({
           >
             <div className="grid grid-cols-2 gap-3 pt-0.5">
               <Field id="date" label="Date" icon={<CalendarDays className="size-4" />} error={errors.date}>
-                <Input id="date" type="date" value={draft.date} onChange={(e) => set("date", e.target.value)} className="h-11 rounded-xl pl-9" />
+                <Input id="date" type="date" value={draft.date} onChange={(e) => set("date", e.target.value)} className="rounded-xl pl-9" />
               </Field>
               <Field id="time" label="Time" icon={<Clock className="size-4" />} error={errors.time}>
-                <Input id="time" type="time" value={draft.time} onChange={(e) => set("time", e.target.value)} className="h-11 rounded-xl pl-9" />
+                <Input id="time" type="time" value={draft.time} onChange={(e) => set("time", e.target.value)} className="rounded-xl pl-9" />
               </Field>
             </div>
           </motion.div>

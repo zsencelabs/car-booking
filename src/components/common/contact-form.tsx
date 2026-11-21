@@ -40,7 +40,7 @@ export function ContactForm({ className, idPrefix = "" }: { className?: string; 
         <Textarea id={`${idPrefix}message`} rows={5} {...register("message")} aria-invalid={!!errors.message} />
         {errors.message && <p role="alert" className="text-xs text-destructive">{errors.message.message}</p>}
       </div>
-      <Button type="submit" size="lg" className="h-10 px-5">Send message</Button>
+      <Button type="submit" size="lg">Send message</Button>
     </form>
   );
 }

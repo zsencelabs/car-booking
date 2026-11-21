@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { QuickBookForm } from "@/components/booking/quick-book-form";
 import { buttonVariants } from "@/components/ui/button";
@@ -15,7 +14,7 @@ const STATS = [
   { k: "6", v: "vehicle classes, economy to van" },
 ];
 
-export function Hero({ brand }: { brand: string }) {
+export function Hero({ brand, driveAction }: { brand: string; driveAction?: React.ReactNode }) {
   return (
     <section className="dark relative isolate overflow-hidden border-b bg-background text-foreground">
       {/* Minimal backdrop: soft neutral light from the top + faint film grain. */}
@@ -56,13 +55,10 @@ export function Hero({ brand }: { brand: string }) {
           className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-3"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.8 }}
         >
-          <Link href="/how-it-works" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-10 rounded-full px-5")}>
+          <Link href="/how-it-works" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-12 rounded-full px-6")}>
             How it works
           </Link>
-          <Link href="/drivers/register" className="group inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            Drive with {brand}
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-          </Link>
+          {driveAction}
         </motion.div>
 
         {/* wide live map strip */}

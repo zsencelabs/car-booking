@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { HeroDriveAction } from "@/components/layout/account-nav";
 import { CategoryRail } from "@/components/landing/category-rail";
 import { FactMarquee } from "@/components/landing/fact-marquee";
 import { FinalCta } from "@/components/landing/final-cta";
@@ -21,7 +23,10 @@ const safetyFeatures = SAFETY_FEATURES.map(({ title, text }) => ({ title, text }
 export default function HomePage() {
   return (
     <MotionProvider>
-      <Hero brand={BRAND.name} />
+      <Hero
+        brand={BRAND.name}
+        driveAction={<Suspense fallback={<span aria-hidden className="h-12 w-48" />}><HeroDriveAction /></Suspense>}
+      />
       <FactMarquee facts={TRUST_FACTS} />
       <RideLifecycle steps={LIFECYCLE_STEPS} />
       <CategoryRail categories={VEHICLE_CATEGORIES} />
