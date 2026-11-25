@@ -41,19 +41,18 @@ export type BookingStatus =
 
 export interface BookingDraft {
   pickup: string;
+  pickupLat?: number;
+  pickupLng?: number;
   destination: string;
+  destinationLat?: number;
+  destinationLng?: number;
+  /** YYYY-MM-DD and HH:mm in the rider's local time. */
   date: string;
   time: string;
+  /** The same pickup time as an ISO timestamp, worked out in the rider's browser (their time zone). */
+  at?: string;
   tripType: TripType;
   passengers: number;
-  categoryId?: VehicleCategoryId;
+  categoryId?: string;
 }
 
-export interface DocumentRequirement {
-  id: string;
-  label: string;
-  description?: string;
-  required: boolean;
-  /** Requirements vary by US jurisdiction (PRD §7); flag those that are conditional. */
-  conditional?: boolean;
-}

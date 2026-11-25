@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,10 +9,12 @@ import { ArrowRight, CarFront, UserRound, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { z } from "zod";
 import { FormField } from "@/components/common/field";
+import { PasswordInput } from "@/components/common/password-input";
 import { PhoneInput } from "@/components/common/phone-input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { loginAs } from "@/lib/auth/actions";
+import { signUp } from "@/lib/auth/actions";
+import { safeReturnPath } from "@/lib/auth/roles";
 import { phoneSchema } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +22,7 @@ const schema = z.object({
   name: z.string().trim().min(2, "Enter your full name"),
   email: z.string().email("Enter a valid email"),
   phone: phoneSchema,
+  password: z.string().min(10, "Use at least 10 characters").max(200),
 });
 type Values = z.infer<typeof schema>;
 
@@ -29,9 +33,25 @@ const ROLES = [
 ] as const;
 
 export function RegisterForm() {
+  const router = useRouter();
+  const next = safeReturnPath(useSearchParams().get("next"));
   const [pending, startTransition] = useTransition();
   const [role, setRole] = useState<(typeof ROLES)[number]["id"]>("customer");
-  const { register, control, handleSubmit, formState: { errors } } = useForm<Values>({ resolver: zodResolver(schema) });
+  const [serverError, setServerError] = useState<string>();
+  const { register, control, handleSubmit, setError, formState: { errors } } = useForm<Values>({ resolver: zodResolver(schema) });
+
+  const submit = (v: Values) =>
+    startTransition(async () => {
+      setServerError(undefined);
+      const res = await signUp({ role: "CUSTOMER", name: v.name, email: v.email, password: v.password, phone: v.phone || undefined });
+      if (!res.ok) {
+        for (const [k, message] of Object.entries(res.fields ?? {})) if (k in v) setError(k as keyof Values, { message });
+        setServerError(res.error);
+        return;
+      }
+      router.push(next ?? res.path);
+      router.refresh();
+    });
 
   return (
     <div className="space-y-7">
@@ -53,11 +73,12 @@ export function RegisterForm() {
       </div>
 
       {role === "customer" ? (
-        <form noValidate onSubmit={handleSubmit(() => startTransition(() => loginAs("customer")))} className="space-y-5">
+        <form noValidate onSubmit={handleSubmit(submit)} className="space-y-5">
           <FormField id="name" label="Full name" error={errors.name}><Input id="name" autoComplete="name" {...register("name")} aria-invalid={!!errors.name} /></FormField>
           <FormField id="email" label="Email" error={errors.email}><Input id="email" type="email" autoComplete="email" {...register("email")} aria-invalid={!!errors.email} /></FormField>
           <FormField id="phone" label="Phone" error={errors.phone}><Controller name="phone" control={control} render={({ field }) => <PhoneInput id="phone" value={field.value} onChange={field.onChange} onBlur={field.onBlur} ref={field.ref} aria-invalid={!!errors.phone} />} /></FormField>
-          <p className="text-xs text-muted-foreground">Demo mode: no password is needed and these details are not saved.</p>
+          <FormField id="password" label="Password" error={errors.password} hint="At least 10 characters"><PasswordInput id="password" autoComplete="new-password" {...register("password")} aria-invalid={!!errors.password} /></FormField>
+          {serverError && <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{serverError}</p>}
           <Button type="submit" size="lg" disabled={pending} className="h-12 w-full rounded-full text-[15px]">{pending ? "Creating account..." : "Create account"}</Button>
         </form>
       ) : (

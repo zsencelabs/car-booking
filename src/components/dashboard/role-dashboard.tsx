@@ -1,11 +1,13 @@
 import { Suspense } from "react";
 import type { Role } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
+import { loadDashboard } from "@/lib/dashboards/load";
 import { DashboardShell } from "./dashboard-shell";
 
 async function Content({ role }: { role: Role }) {
   const user = await requireRole(role);
-  return <DashboardShell user={user} />;
+  const config = await loadDashboard(user);
+  return <DashboardShell user={user} config={config} />;
 }
 
 export function RoleDashboard({ role }: { role: Role }) {

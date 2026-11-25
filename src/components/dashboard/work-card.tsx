@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { forwardRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowRight, Check, Heart, Navigation, Star } from "lucide-react";
+import { ArrowRight, Check, Heart, Loader2, Navigation, Star } from "lucide-react";
 import { EASE } from "@/components/landing/reveal";
-import type { WorkItem } from "@/lib/mock/dashboards";
-import { usd } from "@/lib/mock/fare";
+import type { WorkItem } from "@/lib/dashboards/types";
+import { money } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { StatusPill } from "./panel-view";
 import { VehicleArt } from "./vehicle-art";
@@ -17,10 +17,11 @@ type Props = {
   favourite?: boolean;
   onFavourite?: () => void;
   done?: boolean;
+  pending?: boolean;
   onAction?: () => void;
 };
 
-export const WorkCard = forwardRef<HTMLElement, Props>(function WorkCard({ item, index, favourite, onFavourite, done, onAction }, ref) {
+export const WorkCard = forwardRef<HTMLElement, Props>(function WorkCard({ item, index, favourite, onFavourite, done, pending, onAction }, ref) {
   const reduce = !!useReducedMotion();
   const whole = item.price >= 500;
 
@@ -74,7 +75,7 @@ export const WorkCard = forwardRef<HTMLElement, Props>(function WorkCard({ item,
           <p className="truncate text-xs text-muted-foreground">{item.subtitle}</p>
         </div>
         <p className="shrink-0 text-right">
-          <span className="text-[15px] font-semibold tabular-nums">{whole ? `$${item.price.toLocaleString("en-US")}` : usd(item.price)}</span>
+          <span className="text-[15px] font-semibold tabular-nums">{whole ? `$${Math.round(item.price).toLocaleString("en-US")}` : money(Math.round(item.price * 100))}</span>
           <span className="ml-1 text-[11px] text-muted-foreground">{item.unit}</span>
         </p>
       </div>
@@ -86,10 +87,11 @@ export const WorkCard = forwardRef<HTMLElement, Props>(function WorkCard({ item,
       )}
       {item.action && (
         <button
-          type="button" disabled={done} onClick={onAction}
+          type="button" disabled={done || pending} onClick={onAction}
           aria-label={done ? `${item.title}: ${item.action.done}` : `${item.action.label} ${item.title}`}
           className={cn("mt-3 flex h-9 items-center justify-center gap-1.5 rounded-full text-[13px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50", done ? "bg-primary/20 text-brand-ink" : "bg-foreground text-background hover:bg-primary hover:text-primary-foreground")}
         >
+          {pending && <Loader2 aria-hidden className="size-3.5 animate-spin" />}
           {done && <Check aria-hidden className="size-3.5" />}
           {done ? item.action.done : item.action.label}
         </button>

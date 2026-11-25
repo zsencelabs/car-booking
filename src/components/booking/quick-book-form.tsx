@@ -9,14 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { draftFromParams, draftToParams, MAX_PASSENGERS, TRIP_TYPES } from "@/lib/booking";
+import { AddressInput, addressProblem, type PlaceValue } from "./address-input";
 import type { BookingDraft, TripType } from "@/types";
 
 /** Scheduled rides must be booked at least this far ahead (matches the API). */
 const MIN_LEAD_MINUTES = 15;
 
 const schema = z.object({
-  pickup: z.string().trim().min(3, "Enter a pickup address"),
-  destination: z.string().trim().min(3, "Enter a destination"),
+  pickup: z.string(),
+  destination: z.string(),
   tripType: z.enum(TRIP_TYPES.map((t) => t.value) as [TripType, ...TripType[]]),
   date: z.string(),
   time: z.string(),
@@ -55,6 +56,10 @@ export function QuickBookForm({
   const [swaps, setSwaps] = useState(0);
   const [today, setToday] = useState<string>();
   const set = <K extends keyof BookingDraft>(k: K, v: BookingDraft[K]) => setDraft((d) => ({ ...d, [k]: v }));
+  const pickupValue: PlaceValue = { address: draft.pickup, lat: draft.pickupLat, lng: draft.pickupLng };
+  const destinationValue: PlaceValue = { address: draft.destination, lat: draft.destinationLat, lng: draft.destinationLng };
+  const setPickup = (v: PlaceValue) => setDraft((d) => ({ ...d, pickup: v.address, pickupLat: v.lat, pickupLng: v.lng }));
+  const setDestination = (v: PlaceValue) => setDraft((d) => ({ ...d, destination: v.address, destinationLat: v.lat, destinationLng: v.lng }));
   const scheduled = draft.tripType !== "immediate";
   const locationError = errors.pickup ?? errors.destination;
 
@@ -70,16 +75,26 @@ export function QuickBookForm({
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const res = schema.safeParse(draft);
-    if (!res.success) {
-      setErrors(Object.fromEntries(res.error.issues.map((i) => [String(i.path[0]), i.message])));
+    const found: Record<string, string> = res.success ? {} : Object.fromEntries(res.error.issues.map((i) => [String(i.path[0]), i.message]));
+    const pickupError = addressProblem(pickupValue, "pickup address");
+    const destinationError = addressProblem(destinationValue, "destination");
+    if (pickupError) found.pickup = pickupError;
+    if (destinationError) found.destination = destinationError;
+    if (Object.keys(found).length) {
+      setErrors(found);
       return;
     }
     setErrors({});
-    router.push(`/book/vehicles?${draftToParams(draft).toString()}`);
+    const at = draft.tripType === "immediate" ? undefined : new Date(`${draft.date}T${draft.time}`).toISOString();
+    router.push(`/book/vehicles?${draftToParams({ ...draft, at }).toString()}`);
   }
 
   function swap() {
-    setDraft((d) => ({ ...d, pickup: d.destination, destination: d.pickup }));
+    setDraft((d) => ({
+      ...d,
+      pickup: d.destination, pickupLat: d.destinationLat, pickupLng: d.destinationLng,
+      destination: d.pickup, destinationLat: d.pickupLat, destinationLng: d.pickupLng,
+    }));
     setSwaps((n) => n + 1);
   }
 
@@ -115,10 +130,10 @@ export function QuickBookForm({
         {/* the bar */}
         <div className="flex flex-col rounded-3xl border bg-card p-1.5 text-left shadow-2xl shadow-black/40 md:h-[72px] md:flex-row md:items-stretch md:rounded-[26px]">
           <BarSegment id="pickup-bar" label="Pickup" invalid={!!errors.pickup} marker={<span className="size-2.5 rounded-full border-2 border-foreground" />} className="md:flex-[1.1]">
-            <input
-              id="pickup-bar" value={draft.pickup} onChange={(e) => set("pickup", e.target.value)}
-              placeholder="Pickup location" autoComplete="street-address" aria-invalid={!!errors.pickup}
-              className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+            <AddressInput
+              id="pickup-bar" value={pickupValue} onChange={setPickup}
+              placeholder="Pickup location" invalid={!!errors.pickup}
+              inputClassName="w-full bg-transparent pr-6 text-[15px] outline-none placeholder:text-muted-foreground"
             />
           </BarSegment>
 
@@ -136,10 +151,10 @@ export function QuickBookForm({
           </div>
 
           <BarSegment id="destination-bar" label="Drop-off" invalid={!!errors.destination} marker={<span className="size-2.5 rounded-[3px] bg-foreground" />} className="md:flex-[1.1]">
-            <input
-              id="destination-bar" value={draft.destination} onChange={(e) => set("destination", e.target.value)}
-              placeholder="Where to?" aria-invalid={!!errors.destination}
-              className="w-full bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+            <AddressInput
+              id="destination-bar" value={destinationValue} onChange={setDestination}
+              placeholder="Where to?" invalid={!!errors.destination}
+              inputClassName="w-full bg-transparent pr-6 text-[15px] outline-none placeholder:text-muted-foreground"
             />
           </BarSegment>
 
@@ -189,7 +204,7 @@ export function QuickBookForm({
   return (
     <form onSubmit={onSubmit} noValidate className={cn("space-y-3 rounded-2xl border bg-card p-5 shadow-sm", className)}>
       {/* trip type */}
-      <div role="tablist" aria-label="Trip type" className="grid grid-cols-4 gap-1 rounded-xl bg-muted p-1">
+      <div role="tablist" aria-label="Trip type" className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
         {TRIP_TYPES.map((t) => {
           const selected = draft.tripType === t.value;
           return (
@@ -222,17 +237,17 @@ export function QuickBookForm({
           <span aria-hidden className="pointer-events-none absolute left-[18px] top-[70px] size-2.5 rounded-[3px] bg-foreground" />
 
           <label htmlFor="pickup" className="sr-only">Pickup</label>
-          <input
-            id="pickup" value={draft.pickup} onChange={(e) => set("pickup", e.target.value)}
-            placeholder="Pickup location" autoComplete="street-address" aria-invalid={!!errors.pickup}
-            className="h-14 w-full rounded-t-xl bg-transparent pl-11 pr-14 text-[15px] outline-none placeholder:text-muted-foreground"
+          <AddressInput
+            id="pickup" value={pickupValue} onChange={setPickup}
+            placeholder="Pickup location" invalid={!!errors.pickup}
+            inputClassName="h-14 w-full rounded-t-xl bg-transparent pl-11 pr-14 text-[15px] outline-none placeholder:text-muted-foreground"
           />
           <div className="ml-11 mr-14 border-t" />
           <label htmlFor="destination" className="sr-only">Destination</label>
-          <input
-            id="destination" value={draft.destination} onChange={(e) => set("destination", e.target.value)}
-            placeholder="Where to?" aria-invalid={!!errors.destination}
-            className="h-14 w-full rounded-b-xl bg-transparent pl-11 pr-14 text-[15px] outline-none placeholder:text-muted-foreground"
+          <AddressInput
+            id="destination" value={destinationValue} onChange={setDestination}
+            placeholder="Where to?" invalid={!!errors.destination}
+            inputClassName="h-14 w-full rounded-b-xl bg-transparent pl-11 pr-14 text-[15px] outline-none placeholder:text-muted-foreground"
           />
 
           <motion.button

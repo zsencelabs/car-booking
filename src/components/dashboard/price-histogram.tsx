@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { EASE } from "@/components/landing/reveal";
-import { usd } from "@/lib/mock/fare";
+import { usd } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const BINS = 28;

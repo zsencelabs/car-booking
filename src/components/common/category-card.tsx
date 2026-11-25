@@ -1,5 +1,5 @@
 import { Briefcase, CarFront, Users } from "lucide-react";
-import { usd } from "@/lib/mock/fare";
+import { usd } from "@/lib/format";
 import type { VehicleCategory } from "@/types";
 import { cn } from "@/lib/utils";
 

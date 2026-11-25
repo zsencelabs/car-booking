@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  ArrowLeft, BarChart3, BriefcaseBusiness, CalendarDays, CarFront, Clock3, CreditCard, FileText, LayoutDashboard, LifeBuoy, ListChecks,
-  LogOut, MapPin, Menu, ReceiptText, ScrollText, ShieldCheck, Users, Wallet, type LucideIcon,
+  ArrowLeft, BarChart3, BriefcaseBusiness, Building2, CalendarDays, CarFront, Clock3, CreditCard, FileText, LayoutDashboard, LifeBuoy, ListChecks,
+  LogOut, Mail, MapPin, Menu, Plus, ReceiptText, ScrollText, ShieldCheck, Users, Wallet, type LucideIcon,
 } from "lucide-react";
 import { EASE } from "@/components/landing/reveal";
 import { MotionProvider } from "@/components/landing/motion-provider";
@@ -18,7 +18,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { logout } from "@/lib/auth/actions";
 import type { SessionUser } from "@/lib/auth/roles";
 import { BRAND } from "@/lib/config";
-import { DASHBOARDS, type IconName } from "@/lib/mock/dashboards";
+import type { DashboardConfig, IconName } from "@/lib/dashboards/types";
 import { cn } from "@/lib/utils";
 import { PanelView } from "./panel-view";
 import { WorkspaceView } from "./workspace-view";
@@ -26,6 +26,7 @@ import { WorkspaceView } from "./workspace-view";
 const ICONS: Record<IconName, LucideIcon> = {
   car: CarFront, calendar: CalendarDays, card: CreditCard, receipt: ReceiptText, briefcase: BriefcaseBusiness, list: ListChecks,
   wallet: Wallet, file: FileText, clock: Clock3, users: Users, chart: BarChart3, shield: ShieldCheck, scroll: ScrollText, overview: LayoutDashboard,
+  plus: Plus, mail: Mail, building: Building2,
 };
 
 const subscribeClock = (tick: () => void) => {
@@ -41,11 +42,11 @@ function LiveClock() {
 
 const railItem = "relative flex h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50";
 
-function Rail({ user, view, onSelect, layoutId }: { user: SessionUser; view: string; onSelect: (id: string) => void; layoutId: string }) {
+function Rail({ nav, view, onSelect, layoutId }: { nav: DashboardConfig["nav"]; view: string; onSelect: (id: string) => void; layoutId: string }) {
   return (
     <div className="flex h-full flex-col justify-between gap-6 p-3">
       <nav aria-label="Dashboard" className="space-y-1">
-        {DASHBOARDS[user.role].nav.map((n, i) => {
+        {nav.map((n, i) => {
           const Icon = ICONS[n.icon];
           const on = view === n.id;
           return (
@@ -72,8 +73,7 @@ function Rail({ user, view, onSelect, layoutId }: { user: SessionUser; view: str
   );
 }
 
-export function DashboardShell({ user }: { user: SessionUser }) {
-  const config = DASHBOARDS[user.role];
+export function DashboardShell({ user, config }: { user: SessionUser; config: DashboardConfig }) {
   const params = useSearchParams();
   const [menuOpen, setMenuOpen] = useState(false);
   const requested = params.get("view");
@@ -99,7 +99,7 @@ export function DashboardShell({ user }: { user: SessionUser }) {
             <SheetContent side="left" className="w-64 gap-0 p-0">
               <SheetTitle className="px-5 pb-1 pt-5">{user.label}</SheetTitle>
               <div className="min-h-0 flex-1 overflow-y-auto">
-                <Rail user={user} view={view} onSelect={select} layoutId="rail-active-mobile" />
+                <Rail nav={config.nav} view={view} onSelect={select} layoutId="rail-active-mobile" />
               </div>
             </SheetContent>
           </Sheet>
@@ -109,14 +109,13 @@ export function DashboardShell({ user }: { user: SessionUser }) {
             <span className="inline-flex items-center gap-1.5"><MapPin aria-hidden className="size-3.5" />{BRAND.market}</span>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <span className="hidden rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground sm:inline">Demo · sample data</span>
             <ThemeToggle className="size-10 rounded-full" />
             <AccountMenu user={user} />
           </div>
         </motion.header>
 
         <div className="flex min-h-0 flex-1">
-          <aside className="hidden w-52 shrink-0 border-r lg:block"><Rail user={user} view={view} onSelect={select} layoutId="rail-active" /></aside>
+          <aside className="hidden w-52 shrink-0 border-r lg:block"><Rail nav={config.nav} view={view} onSelect={select} layoutId="rail-active" /></aside>
           <main className="flex min-w-0 flex-1 flex-col bg-muted/50">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div

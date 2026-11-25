@@ -1,12 +1,22 @@
-import { VEHICLE_CATEGORIES } from "@/lib/mock/vehicle-categories";
-import type { BookingDraft, TripType, VehicleCategoryId } from "@/types";
+import type { BookingDraft, TripType } from "@/types";
 
+/** How the ride form offers timing and direction. "one-way" is kept for older links and means a scheduled one-way ride. */
 export const TRIP_TYPES: { value: TripType; label: string }[] = [
-  { value: "scheduled", label: "Schedule" },
   { value: "immediate", label: "Ride now" },
-  { value: "one-way", label: "One-way" },
-  { value: "round-trip", label: "Round-trip" },
+  { value: "scheduled", label: "Schedule" },
+  { value: "round-trip", label: "Round trip" },
 ];
+
+/** The API's timing and direction for a trip type. */
+export function apiTrip(tripType: TripType) {
+  return {
+    timing: tripType === "immediate" ? ("IMMEDIATE" as const) : ("SCHEDULED" as const),
+    tripType: tripType === "round-trip" ? ("ROUND_TRIP" as const) : ("ONE_WAY" as const),
+  };
+}
+
+export const tripLabel = (tripType: TripType) =>
+  tripType === "immediate" ? "Ride now" : tripType === "round-trip" ? "Round trip" : "Scheduled";
 
 export function draftToParams(d: Partial<BookingDraft>) {
   const p = new URLSearchParams();
@@ -18,10 +28,20 @@ export function draftToParams(d: Partial<BookingDraft>) {
 
 type Params = { get(name: string): string | null };
 
-export const MAX_PASSENGERS = Math.max(...VEHICLE_CATEGORIES.map((c) => c.passengers));
+/** The largest vehicle class seats 8. */
+export const MAX_PASSENGERS = 8;
 
-const isTripType = (v: string | null): v is TripType => TRIP_TYPES.some((t) => t.value === v);
-const isCategoryId = (v: string | null): v is VehicleCategoryId => VEHICLE_CATEGORIES.some((c) => c.id === v);
+const TRIP_VALUES: TripType[] = ["immediate", "scheduled", "one-way", "round-trip"];
+const isTripType = (v: string | null): v is TripType => TRIP_VALUES.includes(v as TripType);
+const isCategoryId = (v: string | null): v is string => !!v && /^[a-z][a-z0-9-]{1,31}$/.test(v);
+
+const isIso = (v: string | null) => !!v && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/.test(v) && !Number.isNaN(Date.parse(v));
+
+function coord(raw: string | null, limit: number) {
+  if (raw === null || raw === "") return undefined;
+  const n = Number(raw);
+  return Number.isFinite(n) && Math.abs(n) <= limit ? n : undefined;
+}
 
 /** Reads a draft from the URL. Anything unknown or out of range falls back to a safe default. */
 export function draftFromParams(p: Params): BookingDraft {
@@ -31,14 +51,24 @@ export function draftFromParams(p: Params): BookingDraft {
   const time = p.get("time") ?? "";
   const passengers = Math.trunc(Number(p.get("passengers") ?? 1));
   return {
-    pickup: (p.get("pickup") ?? "").slice(0, 200),
-    destination: (p.get("destination") ?? "").slice(0, 200),
+    pickup: (p.get("pickup") ?? "").slice(0, 300),
+    pickupLat: coord(p.get("pickupLat"), 90),
+    pickupLng: coord(p.get("pickupLng"), 180),
+    destination: (p.get("destination") ?? "").slice(0, 300),
+    destinationLat: coord(p.get("destinationLat"), 90),
+    destinationLng: coord(p.get("destinationLng"), 180),
     date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : "",
     time: /^\d{2}:\d{2}$/.test(time) ? time : "12:00",
-    tripType: isTripType(tripType) ? tripType : "scheduled",
+    at: isIso(p.get("at")) ? p.get("at")! : undefined,
+    tripType: isTripType(tripType) ? (tripType === "one-way" ? "scheduled" : tripType) : "scheduled",
     passengers: Number.isFinite(passengers) ? Math.min(Math.max(passengers, 1), MAX_PASSENGERS) : 1,
     categoryId: isCategoryId(categoryId) ? categoryId : undefined,
   };
+}
+
+/** Whether a draft has both places with coordinates, so it can be priced. */
+export function hasRoute(d: BookingDraft): d is BookingDraft & { pickupLat: number; pickupLng: number; destinationLat: number; destinationLng: number } {
+  return d.pickupLat !== undefined && d.pickupLng !== undefined && d.destinationLat !== undefined && d.destinationLng !== undefined && !!d.pickup && !!d.destination;
 }
 
 /** Adapts Next's `searchParams` record to the `get()` shape `draftFromParams` expects. */

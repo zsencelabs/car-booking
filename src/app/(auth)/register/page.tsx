@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { RegisterForm } from "@/components/auth/register-form";
 
@@ -15,7 +16,9 @@ export default function Page() {
       title="Create your account"
       subtitle="Choose how you'll use the platform."
     >
-      <RegisterForm />
+      <Suspense fallback={<div aria-hidden className="h-96" />}>
+        <RegisterForm />
+      </Suspense>
       <p className="mt-7 text-center text-sm text-muted-foreground">Already have an account? <Link href="/login" className="font-medium text-brand-ink hover:underline">Log in</Link></p>
     </AuthShell>
   );

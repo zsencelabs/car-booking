@@ -52,7 +52,7 @@ export async function MobileAccountNav() {
     <>
       <div className="mt-3 border-t px-3 pb-1 pt-4">
         <p className="text-sm font-semibold">{user.name}</p>
-        <p className="text-xs text-muted-foreground">{user.label} · Demo</p>
+        <p className="text-xs text-muted-foreground">{user.email}</p>
       </div>
       <SheetClose render={<Link href={user.path} className={buttonVariants()} />}>Dashboard</SheetClose>
       {user.role === "customer" && <SheetClose render={<Link href="/book" className={buttonVariants({ variant: "outline" })} />}>Book a ride</SheetClose>}

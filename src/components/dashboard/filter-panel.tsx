@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EASE } from "@/components/landing/reveal";
-import type { FilterGroup, WorkItem } from "@/lib/mock/dashboards";
+import type { FilterGroup, WorkItem } from "@/lib/dashboards/types";
 import { cn } from "@/lib/utils";
 import { PriceHistogram } from "./price-histogram";
 

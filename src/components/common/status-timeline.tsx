@@ -1,8 +1,8 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { BookingStatus } from "@/types";
 
-export function StatusTimeline({ steps, current }: { steps: BookingStatus[]; current: BookingStatus }) {
+/** Steps up to and including `current` show as done; `current` is highlighted. */
+export function StatusTimeline({ steps, current }: { steps: string[]; current: string }) {
   const idx = steps.indexOf(current);
   return (
     <ol className="space-y-4">

@@ -1,37 +1,27 @@
-/**
- * DEMO role system. Anyone can pick any role, so this is NOT real security.
- * Replace the session and login with a real identity provider before launch.
- */
+import type { ApiRole } from "@/lib/api/types";
+
 export const ROLES = ["customer", "driver", "provider", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 
-export const SESSION_COOKIE = "dropoff_demo_role";
-
-export const ROLE_INFO: Record<Role, { label: string; name: string; description: string; path: string }> = {
-  customer: { label: "Customer", name: "Demo Customer", description: "Book rides and track your trips", path: "/dashboard/customer" },
-  driver: { label: "Driver", name: "Demo Driver", description: "See jobs, earnings and documents", path: "/dashboard/driver" },
-  provider: { label: "Car provider", name: "Demo Fleet", description: "Manage vehicles, drivers and revenue", path: "/dashboard/provider" },
-  admin: { label: "Admin", name: "Demo Admin", description: "Oversee the whole platform", path: "/dashboard/admin" },
+export const ROLE_INFO: Record<Role, { label: string; path: string }> = {
+  customer: { label: "Customer", path: "/dashboard/customer" },
+  driver: { label: "Driver", path: "/dashboard/driver" },
+  provider: { label: "Car provider", path: "/dashboard/provider" },
+  admin: { label: "Admin", path: "/dashboard/admin" },
 };
 
-export type SessionUser = { role: Role; name: string; label: string; path: string };
+export const roleFromApi = (role: ApiRole): Role => role.toLowerCase() as Role;
 
-/**
- * Roles the demo login offers. The demo Admin view is local-only: on a production
- * build it is hidden and an `admin` cookie is ignored, unless
- * NEXT_PUBLIC_DEMO_ADMIN=true is set at build time.
- */
-export const DEMO_ROLES: readonly Role[] =
-  process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_ADMIN === "true"
-    ? ROLES
-    : ROLES.filter((r) => r !== "admin");
-
-/** Whether a value is a role the demo login currently accepts. */
-export const isRole = (value: unknown): value is Role => DEMO_ROLES.includes(value as Role);
-
-export const userForRole = (role: Role): SessionUser => {
-  const { name, label, path } = ROLE_INFO[role];
-  return { role, name, label, path };
+/** What the UI knows about the signed-in user. */
+export type SessionUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  label: string;
+  path: string;
+  driverId: string | null;
+  providerId: string | null;
 };
 
 /** Whether a role may open a path. Non-dashboard paths are public. */

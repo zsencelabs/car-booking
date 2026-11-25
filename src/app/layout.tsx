@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { TimeZoneCookie } from "@/components/common/time-zone-cookie";
 import { Toaster } from "@/components/ui/sonner";
 import { BRAND } from "@/lib/config";
 import "./globals.css";
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           {children}
           <Toaster richColors position="top-center" />
+          <TimeZoneCookie />
         </ThemeProvider>
       </body>
     </html>

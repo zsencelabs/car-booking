@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { FieldValues, Path, UseFormReturn } from "react-hook-form";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { EASE } from "@/components/landing/reveal";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface WizardStep<T extends FieldValues> {
@@ -19,22 +20,39 @@ export interface WizardStep<T extends FieldValues> {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+/** What submitting returns: where to go next, or an error (with optional field errors). */
+export type WizardResult = { ok: true; path: string } | { ok: false; error: string; fields?: Record<string, string> };
+
 export function Wizard<T extends FieldValues>({ form, steps, onSubmit, submitLabel, doneTitle, doneText }: {
-  form: UseFormReturn<T>; steps: WizardStep<T>[]; onSubmit: () => void; submitLabel: string; doneTitle: string; doneText: string;
+  form: UseFormReturn<T>; steps: WizardStep<T>[]; onSubmit: (values: T) => Promise<WizardResult>; submitLabel: string; doneTitle: string; doneText: string;
 }) {
   const [i, setI] = useState(0);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState<string>();
   const step = steps[i];
   const last = i === steps.length - 1;
+  const submitting = form.formState.isSubmitting;
 
   async function next() {
     if (await form.trigger(step.fields)) setI((n) => n + 1);
   }
 
-  if (done) return <SuccessScreen title={doneTitle} text={doneText} />;
+  async function submit(values: T) {
+    setError(undefined);
+    const res = await onSubmit(values);
+    if (res.ok) return setDone(res.path);
+    // Send the person back to the first step with a field the server rejected.
+    const bad = Object.keys(res.fields ?? {});
+    for (const k of bad) form.setError(k as Path<T>, { message: res.fields![k] });
+    const at = steps.findIndex((s) => s.fields.some((f) => bad.includes(f)));
+    if (at >= 0) setI(at);
+    setError(res.error);
+  }
+
+  if (done) return <SuccessScreen title={doneTitle} text={doneText} href={done} />;
 
   return (
-    <form noValidate onSubmit={form.handleSubmit(() => { onSubmit(); setDone(true); })}>
+    <form noValidate onSubmit={form.handleSubmit(submit)}>
       <div className="mb-10">
         <div className="mb-3 flex items-center justify-between gap-4">
           <span className="eyebrow">Step {pad(i + 1)} / {pad(steps.length)}</span>
@@ -65,12 +83,14 @@ export function Wizard<T extends FieldValues>({ form, steps, onSubmit, submitLab
         <div className="mt-8 space-y-5">{step.render(form)}</div>
       </motion.div>
 
+      {error && <p role="alert" className="mt-8 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>}
+
       <div className="mt-10 flex items-center justify-between gap-3">
-        <Button type="button" variant="ghost" size="lg" className="h-12 rounded-full px-5" onClick={() => setI((n) => n - 1)} disabled={i === 0}>
+        <Button type="button" variant="ghost" size="lg" className="h-12 rounded-full px-5" onClick={() => setI((n) => n - 1)} disabled={i === 0 || submitting}>
           <ArrowLeft className="size-4" />Back
         </Button>
         {last
-          ? <Button key="submit" type="submit" size="lg" className="h-12 rounded-full px-7 text-[15px]">{submitLabel}</Button>
+          ? <Button key="submit" type="submit" size="lg" disabled={submitting} className="h-12 rounded-full px-7 text-[15px]">{submitting && <Loader2 aria-hidden className="size-4 animate-spin" />}{submitting ? "Submitting..." : submitLabel}</Button>
           : <Button key="next" type="button" size="lg" className="h-12 rounded-full px-7 text-[15px]" onClick={next}>Continue<ArrowRight className="size-4" /></Button>}
       </div>
     </form>
@@ -89,7 +109,7 @@ const BURST = Array.from({ length: 18 }, (_, i) => {
   };
 });
 
-function SuccessScreen({ title, text }: { title: string; text: string }) {
+function SuccessScreen({ title, text, href }: { title: string; text: string; href: string }) {
   const reduce = !!useReducedMotion();
   const from = <T,>(value: T) => (reduce ? false : value);
 
@@ -161,6 +181,7 @@ function SuccessScreen({ title, text }: { title: string; text: string }) {
       >
         {text}
       </motion.p>
+      <Link href={href} className={cn(buttonVariants({ size: "lg" }), "mt-8 h-12 rounded-full px-7")}>Go to your dashboard</Link>
     </div>
   );
 }

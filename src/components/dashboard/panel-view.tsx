@@ -1,13 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { animate, motion, useReducedMotion } from "motion/react";
+import { ChevronRight, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { EASE } from "@/components/landing/reveal";
-import type { DashboardChart, DashboardRow, PanelData } from "@/lib/mock/dashboards";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { runOp } from "@/lib/dashboards/actions";
+import type { DashboardChart, DashboardRow, PanelData, RowAction } from "@/lib/dashboards/types";
 import { cn } from "@/lib/utils";
+import { PanelForms } from "./panel-forms";
+import { Notice } from "./workspace-view";
 
-const POSITIVE = new Set(["Confirmed", "Paid", "Approved", "Active", "On", "Default", "New", "Driver assigned", "Accepted", "Resolved"]);
-const NEGATIVE = new Set(["Disputed"]);
+const POSITIVE = new Set([
+  "Confirmed", "Paid", "Approved", "Active", "Available", "Assigned", "Accepted", "New", "Completed",
+  "Driver assigned", "Driver on the way", "Driver arrived", "Ride in progress",
+]);
+const NEGATIVE = new Set(["Disputed", "Rejected", "Suspended", "Cancelled", "Revoked", "Expired", "Papers expired", "Missing"]);
 
 export function StatusPill({ label }: { label: string }) {
   return (
@@ -85,21 +97,81 @@ function BarChart({ chart }: { chart: DashboardChart }) {
   );
 }
 
-function Row({ row, index }: { row: DashboardRow; index: number }) {
+function Actions({ actions }: { actions: RowAction[] }) {
+  const router = useRouter();
+  const [asking, setAsking] = useState<RowAction | null>(null);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [, start] = useTransition();
+
+  function go(action: RowAction, input?: string) {
+    setBusy(action.label);
+    start(async () => {
+      const res = await runOp(action.op, input);
+      setBusy(null);
+      if (!res.ok) return void toast.error(res.error);
+      setAsking(null);
+      setNote("");
+      toast.success("Done");
+      router.refresh();
+    });
+  }
+
+  if (asking) {
+    return (
+      <form
+        className="flex w-full flex-wrap items-center gap-2 sm:w-auto"
+        onSubmit={(e) => { e.preventDefault(); go(asking, note); }}
+      >
+        <Input autoFocus aria-label={asking.ask} placeholder={asking.ask} value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} className="h-8 min-w-48 flex-1 text-sm" />
+        <Button type="submit" size="sm" variant={asking.tone === "danger" ? "destructive" : "default"} disabled={!!busy || note.trim().length < 2}>
+          {busy && <Loader2 aria-hidden className="size-3.5 animate-spin" />}{asking.label}
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => { setAsking(null); setNote(""); }}>Cancel</Button>
+      </form>
+    );
+  }
+
   return (
-    <motion.li
-      initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, delay: 0.12 + index * 0.05, ease: EASE }}
-      className="flex items-center justify-between gap-4 py-3.5"
-    >
+    <div className="flex flex-wrap gap-1.5">
+      {actions.map((a) => (
+        <Button
+          key={a.label} type="button" size="sm" disabled={!!busy}
+          variant={a.tone === "primary" ? "default" : a.tone === "danger" ? "outline" : "secondary"}
+          className={cn(a.tone === "danger" && "text-destructive hover:text-destructive")}
+          onClick={() => (a.ask ? setAsking(a) : go(a))}
+        >
+          {busy === a.label && <Loader2 aria-hidden className="size-3.5 animate-spin" />}{a.label}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function Row({ row, index }: { row: DashboardRow; index: number }) {
+  const body = (
+    <>
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{row.title}</p>
-        <p className="truncate text-xs text-muted-foreground">{row.meta}</p>
+        <p className="text-xs text-muted-foreground [overflow-wrap:anywhere]">{row.meta}</p>
       </div>
       <div className="flex shrink-0 items-center gap-3">
         {row.value && <span className="text-sm font-semibold tabular-nums">{row.value}</span>}
         {row.status && <StatusPill label={row.status} />}
+        {row.href && <ChevronRight aria-hidden className="size-4 text-muted-foreground" />}
       </div>
+    </>
+  );
+  return (
+    <motion.li
+      initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, delay: 0.12 + Math.min(index, 8) * 0.05, ease: EASE }}
+      className="py-3.5"
+    >
+      {row.href
+        ? <Link href={row.href} className="-mx-2 flex items-center justify-between gap-4 rounded-lg px-2 py-1 outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50">{body}</Link>
+        : <div className="flex items-center justify-between gap-4">{body}</div>}
+      {row.actions && row.actions.length > 0 && <div className="mt-2.5"><Actions actions={row.actions} /></div>}
     </motion.li>
   );
 }
@@ -112,6 +184,8 @@ export function PanelView({ panel }: { panel: PanelData }) {
           <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{panel.title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{panel.text}</p>
         </div>
+
+        {panel.notice && <Notice text={panel.notice} />}
 
         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {panel.stats.map((s, i) => (
@@ -127,15 +201,21 @@ export function PanelView({ panel }: { panel: PanelData }) {
           ))}
         </dl>
 
+        {panel.forms && <PanelForms forms={panel.forms} />}
+
         {panel.chart && <BarChart chart={panel.chart} />}
 
         <div className={cn("grid gap-5", panel.sections.length > 1 && "lg:grid-cols-2")}>
           {panel.sections.map((section) => (
             <section key={section.title} className="min-w-0 rounded-2xl bg-card px-5 pb-2 pt-5 ring-1 ring-foreground/5">
               <h2 className="text-[15px] font-semibold tracking-tight">{section.title}</h2>
-              <ul className="mt-2 divide-y">
-                {section.rows.map((row, i) => <Row key={row.title} row={row} index={i} />)}
-              </ul>
+              {section.rows.length > 0 ? (
+                <ul className="mt-2 divide-y">
+                  {section.rows.map((row, i) => <Row key={row.id} row={row} index={i} />)}
+                </ul>
+              ) : (
+                <p className="py-6 text-sm text-muted-foreground">{section.empty ?? "Nothing here yet."}</p>
+              )}
             </section>
           ))}
         </div>

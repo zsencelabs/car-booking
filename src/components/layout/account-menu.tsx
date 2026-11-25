@@ -27,7 +27,7 @@ export function AccountMenu({ user }: { user: SessionUser }) {
       <PopoverContent align="end" sideOffset={8} className="w-60 gap-1 rounded-2xl p-2">
         <div className="px-2.5 pb-2 pt-1.5">
           <p className="truncate text-sm font-semibold">{user.name}</p>
-          <p className="text-xs text-muted-foreground">{user.label} · Demo</p>
+          <p className="text-xs text-muted-foreground">{user.email}</p>
         </div>
         <Link href={user.path} onClick={() => setOpen(false)} className={item}>
           <LayoutDashboard aria-hidden className="size-4 text-muted-foreground" />Dashboard
