@@ -21,7 +21,7 @@ export function BookingSummary({ draft, category }: { draft: BookingDraft; categ
       {category && fare !== undefined && (
         <div className="space-y-1 border-t pt-3 text-sm">
           <div className="flex justify-between"><span>{category.name}{round ? " (round-trip)" : ""}</span><span className="font-semibold">{usd(fare)}</span></div>
-          <p className="text-xs text-muted-foreground">Estimate for the design preview. The final fare is calculated by the server when the ride is completed.</p>
+          <p className="text-xs text-muted-foreground">Estimate for the design preview. Your price is quoted when you book and confirmed when the ride is completed.</p>
         </div>
       )}
     </aside>

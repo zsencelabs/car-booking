@@ -315,7 +315,7 @@ export function LiveDispatchMap({ className }: { className?: string }) {
           <span className="font-mono text-[11px] text-muted-foreground">0{shown + 1} / 04</span>
         </div>
 
-        <div className="mt-4 h-7 overflow-hidden" role="status" aria-live="polite">
+        <div className="mt-4 h-7 overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.p
               key={shown}

@@ -25,7 +25,7 @@ const BENEFITS: { title: string; text: string; Visual: (p: VisualProps) => React
   { title: "Upfront estimates", text: "See a fare range for every vehicle class before you book.", Visual: EstimateVisual },
   { title: "Real choice of rides", text: "Six vehicle classes from independent drivers, local fleets and our own cars.", Visual: ChoiceVisual },
   { title: "Now or later", text: "Ride now or schedule ahead, one-way or round-trip.", Visual: ToggleVisual },
-  { title: "Fair to drivers", text: "Providers keep 80% of every fare, and 100% of your tip goes to your driver.", Visual: SplitVisual },
+  { title: "Fair to drivers", text: "Partner fleets keep 80% of each fare, before processing fees and adjustments, and 100% of your tip goes to your driver.", Visual: SplitVisual },
 ];
 
 export function WhyDropoff() {

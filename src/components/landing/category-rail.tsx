@@ -31,19 +31,18 @@ export function CategoryRail({ categories }: { categories: VehicleCategory[] }) 
         </div>
 
         <div className="grid gap-10 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
-          <ul role="listbox" aria-label="Vehicle classes" className="border-t" onMouseLeave={() => undefined}>
+          <ul aria-label="Vehicle classes" className="border-t">
             {categories.map((c, i) => {
               const selected = c.id === activeId;
               return (
                 <li key={c.id} className="border-b">
                   <button
                     type="button"
-                    role="option"
-                    aria-selected={selected}
+                    aria-pressed={selected}
                     onMouseEnter={() => setActiveId(c.id)}
                     onFocus={() => setActiveId(c.id)}
                     onClick={() => setActiveId(c.id)}
-                    className="relative flex w-full items-center gap-6 py-5 text-left outline-none"
+                    className="relative flex w-full items-center gap-6 rounded-xl py-5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {selected && (
                       <motion.span layoutId="cat-hl" className="absolute inset-y-0 -left-4 -right-4 -z-10 rounded-xl bg-muted/60" transition={{ type: "spring", stiffness: 400, damping: 36 }} />
@@ -52,7 +51,7 @@ export function CategoryRail({ categories }: { categories: VehicleCategory[] }) 
                     <span className={cn("flex-1 text-3xl font-semibold tracking-tight transition-colors md:text-4xl", selected ? "text-foreground" : "text-muted-foreground/60")}>
                       {c.name}
                     </span>
-                    <span className="hidden font-mono text-sm text-muted-foreground sm:block">from {usd(c.baseFare)}</span>
+                    <span className="hidden font-mono text-sm text-muted-foreground sm:block">base {usd(c.baseFare)}</span>
                     <span className={cn("font-mono text-xs transition-colors", selected ? "text-primary" : "text-muted-foreground")}>{c.eta}</span>
                   </button>
                 </li>
@@ -91,7 +90,7 @@ export function CategoryRail({ categories }: { categories: VehicleCategory[] }) 
                 Book {active.name}
               </Link>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">Estimates only. Final fare is calculated by the platform at booking.</p>
+            <p className="mt-3 text-xs text-muted-foreground">Estimates only. Your price is quoted when you book and confirmed when the ride is completed.</p>
           </div>
         </div>
       </div>

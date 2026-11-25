@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
+import { Pause, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EASE, MaskLines } from "./reveal";
 
@@ -20,14 +21,18 @@ export function Testimonials({ items }: { items: readonly Testimonial[] }) {
   const inView = useInView(ref, { margin: "-80px" });
   const reduce = !!useReducedMotion();
   const [active, setActive] = useState(0);
+  // Paused by the button (stays paused), or while the pointer or focus is inside.
+  const [paused, setPaused] = useState(false);
+  const [holding, setHolding] = useState(false);
   const n = items.length;
+  const playing = inView && !reduce && !paused && !holding;
 
-  // One timer per slide; only while on screen. A click restarts it from that slide.
+  // One timer per slide; only while playing. A click restarts it from that slide.
   useEffect(() => {
-    if (!inView || reduce) return;
+    if (!playing) return;
     const t = setTimeout(() => setActive((a) => (a + 1) % n), SLIDE_MS);
     return () => clearTimeout(t);
-  }, [active, inView, reduce, n]);
+  }, [active, playing, n]);
 
   const current = items[active];
   const words = current.text.split(" ");
@@ -49,16 +54,32 @@ export function Testimonials({ items }: { items: readonly Testimonial[] }) {
           </p>
         </div>
 
-        <div ref={ref}>
+        <div
+          ref={ref}
+          onPointerEnter={() => setHolding(true)}
+          onPointerLeave={() => setHolding(false)}
+          onFocus={() => setHolding(true)}
+          onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setHolding(false); }}
+        >
           {/* featured quote */}
           <figure className="relative min-h-[240px] md:min-h-[260px]">
             <div className="flex items-start justify-between">
               <span aria-hidden className="block font-serif text-7xl leading-none text-primary md:text-8xl">&ldquo;</span>
-              <span className="pt-4 font-mono text-[11px] text-muted-foreground">
+              <span className="flex items-center gap-3 pt-4 font-mono text-[11px] text-muted-foreground">
                 {pad(active + 1)} / {pad(n)}
+                {!reduce && (
+                  <button
+                    type="button"
+                    onClick={() => setPaused((p) => !p)}
+                    aria-label={paused ? "Play testimonials" : "Pause testimonials"}
+                    className="grid size-7 place-items-center rounded-full border text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {paused ? <Play aria-hidden className="size-3" /> : <Pause aria-hidden className="size-3" />}
+                  </button>
+                )}
               </span>
             </div>
-            <div aria-live="polite">
+            <div aria-live={playing ? "off" : "polite"}>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.blockquote
                   key={active}
@@ -109,10 +130,10 @@ export function Testimonials({ items }: { items: readonly Testimonial[] }) {
                     <span aria-hidden className="absolute inset-x-0 -top-px h-px overflow-hidden">
                       {on && (
                         <motion.span
-                          key={`${active}-${inView}`}
+                          key={`${active}-${playing}`}
                           className="block h-full bg-primary"
                           initial={{ width: reduce ? "100%" : "0%" }}
-                          animate={{ width: reduce || inView ? "100%" : "0%" }}
+                          animate={{ width: reduce || playing ? "100%" : "0%" }}
                           transition={{ duration: reduce ? 0 : SLIDE_MS / 1000, ease: "linear" }}
                         />
                       )}

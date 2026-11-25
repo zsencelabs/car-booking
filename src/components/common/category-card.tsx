@@ -15,7 +15,7 @@ export function CategoryCard({ category, className }: { category: VehicleCategor
       <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
         <span className="flex items-center gap-1"><Users className="size-4" />{category.passengers}</span>
         <span className="flex items-center gap-1"><Briefcase className="size-4" />{category.luggage}</span>
-        <span className="ml-auto font-medium text-foreground">from {usd(category.baseFare)}</span>
+        <span className="ml-auto font-medium text-foreground">base {usd(category.baseFare)}</span>
       </div>
     </div>
   );

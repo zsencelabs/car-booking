@@ -419,7 +419,7 @@ function PayScreen({ instant }: { instant: boolean }) {
   );
 }
 
-const TIPS = ["None", "15%", "20%", "25%"];
+const TIPS = ["None", "10%", "15%", "20%"];
 
 function RateScreen({ instant }: { instant: boolean }) {
   const tipped = useAfter(2000, instant);

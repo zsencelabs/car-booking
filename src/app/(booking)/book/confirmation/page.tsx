@@ -14,7 +14,7 @@ import { estimateFare, mockRouteStats } from "@/lib/mock/fare";
 import { VEHICLE_CATEGORIES } from "@/lib/mock/vehicle-categories";
 import type { BookingStatus } from "@/types";
 
-export const metadata: Metadata = { title: "Booking confirmed" };
+export const metadata: Metadata = { title: "Booking request received" };
 
 const TIMELINE: BookingStatus[] = ["Searching for provider", "Driver assigned", "Confirmed", "Driver on the way", "Driver arrived", "Ride in progress", "Completed", "Paid"];
 
@@ -31,8 +31,8 @@ async function ConfirmationPageContent({ searchParams }: Pick<PageProps<"/book/c
       <div className="flex items-center gap-3">
         <CheckCircle2 className="size-9 text-emerald-500" />
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Booking received</h1>
-          <p className="text-sm text-muted-foreground">Reference DO-{String(miles * 1000).slice(0, 4).padStart(4, "0")} · we&apos;re finding your driver.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Booking request received <span className="text-muted-foreground">(demo)</span></h1>
+          <p className="text-sm text-muted-foreground">This preview doesn&apos;t place a real booking. A reference number is assigned when bookings go live.</p>
         </div>
       </div>
       <div className="grid gap-6 md:grid-cols-[1.2fr_1fr]">
@@ -43,7 +43,8 @@ async function ConfirmationPageContent({ searchParams }: Pick<PageProps<"/book/c
             <p className="mt-4 text-xs text-muted-foreground">Sample status for the design preview. Real statuses are driven by the backend.</p>
           </div>
           <div className="rounded-2xl border bg-card p-6">
-            <h2 className="mb-4 text-lg font-semibold">Your driver and vehicle</h2>
+            <h2 className="mb-1 text-lg font-semibold">Your driver and vehicle</h2>
+            <p className="mb-4 text-xs text-muted-foreground">Sample driver and car, shown for the design only. You&apos;ll see your real driver once one accepts.</p>
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-3">
                 <span className="grid size-12 place-items-center rounded-full bg-muted"><UserRound className="size-6" /></span>

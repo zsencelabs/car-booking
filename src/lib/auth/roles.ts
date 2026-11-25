@@ -16,7 +16,18 @@ export const ROLE_INFO: Record<Role, { label: string; name: string; description:
 
 export type SessionUser = { role: Role; name: string; label: string; path: string };
 
-export const isRole = (value: unknown): value is Role => ROLES.includes(value as Role);
+/**
+ * Roles the demo login offers. The demo Admin view is local-only: on a production
+ * build it is hidden and an `admin` cookie is ignored, unless
+ * NEXT_PUBLIC_DEMO_ADMIN=true is set at build time.
+ */
+export const DEMO_ROLES: readonly Role[] =
+  process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_ADMIN === "true"
+    ? ROLES
+    : ROLES.filter((r) => r !== "admin");
+
+/** Whether a value is a role the demo login currently accepts. */
+export const isRole = (value: unknown): value is Role => DEMO_ROLES.includes(value as Role);
 
 export const userForRole = (role: Role): SessionUser => {
   const { name, label, path } = ROLE_INFO[role];

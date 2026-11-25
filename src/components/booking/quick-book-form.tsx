@@ -8,15 +8,16 @@ import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { draftFromParams, draftToParams, TRIP_TYPES } from "@/lib/booking";
+import { draftFromParams, draftToParams, MAX_PASSENGERS, TRIP_TYPES } from "@/lib/booking";
 import type { BookingDraft, TripType } from "@/types";
 
-const MAX_PASSENGERS = 8;
+/** Scheduled rides must be booked at least this far ahead (matches the API). */
+const MIN_LEAD_MINUTES = 15;
 
 const schema = z.object({
   pickup: z.string().trim().min(3, "Enter a pickup address"),
   destination: z.string().trim().min(3, "Enter a destination"),
-  tripType: z.string(),
+  tripType: z.enum(TRIP_TYPES.map((t) => t.value) as [TripType, ...TripType[]]),
   date: z.string(),
   time: z.string(),
   passengers: z.number().int().min(1, "At least 1 passenger").max(MAX_PASSENGERS, `Up to ${MAX_PASSENGERS} passengers`),
@@ -24,6 +25,19 @@ const schema = z.object({
   if (v.tripType === "immediate") return;
   if (!v.date) ctx.addIssue({ code: "custom", path: ["date"], message: "Choose a date" });
   if (!v.time) ctx.addIssue({ code: "custom", path: ["time"], message: "Choose a time" });
+  if (!v.date || !v.time) return;
+  // Read as the visitor's local time.
+  const at = new Date(`${v.date}T${v.time}`);
+  if (Number.isNaN(at.getTime())) {
+    ctx.addIssue({ code: "custom", path: ["date"], message: "Choose a valid date" });
+  } else if (at.getTime() < Date.now() + MIN_LEAD_MINUTES * 60_000) {
+    const past = at.getTime() < Date.now();
+    ctx.addIssue({
+      code: "custom",
+      path: [past ? "date" : "time"],
+      message: past ? "That time has passed" : `Book at least ${MIN_LEAD_MINUTES} minutes ahead, or choose Ride now`,
+    });
+  }
 });
 
 /** Today in the visitor's timezone, as YYYY-MM-DD. */
@@ -39,6 +53,7 @@ export function QuickBookForm({
   const [draft, setDraft] = useState<BookingDraft>(initial ?? draftFromParams(new URLSearchParams()));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [swaps, setSwaps] = useState(0);
+  const [today, setToday] = useState<string>();
   const set = <K extends keyof BookingDraft>(k: K, v: BookingDraft[K]) => setDraft((d) => ({ ...d, [k]: v }));
   const scheduled = draft.tripType !== "immediate";
   const locationError = errors.pickup ?? errors.destination;
@@ -46,6 +61,7 @@ export function QuickBookForm({
   // Filled after mount so server and client render the same initial HTML.
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
+      setToday(localToday());
       setDraft((d) => (d.tripType !== "immediate" && !d.date ? { ...d, date: localToday() } : d));
     });
     return () => cancelAnimationFrame(frame);
@@ -139,7 +155,7 @@ export function QuickBookForm({
               >
                 <span aria-hidden className="mx-4 h-px bg-border md:mx-0 md:my-3 md:h-auto md:w-px" />
                 <BarSegment id="date-bar" label="Date" invalid={!!errors.date} marker={<CalendarDays className="size-4 text-muted-foreground" />} className="md:w-[11.5rem]">
-                  <input id="date-bar" type="date" value={draft.date} onChange={(e) => set("date", e.target.value)} className="w-full bg-transparent text-[15px] outline-none [color-scheme:dark]" />
+                  <input id="date-bar" type="date" min={today} value={draft.date} onChange={(e) => set("date", e.target.value)} className="w-full bg-transparent text-[15px] outline-none [color-scheme:dark]" />
                 </BarSegment>
                 <span aria-hidden className="mx-4 h-px bg-border md:mx-0 md:my-3 md:h-auto md:w-px" />
                 <BarSegment id="time-bar" label="Time" invalid={!!errors.time} marker={<Clock className="size-4 text-muted-foreground" />} className="md:w-[10.75rem]">
@@ -244,7 +260,7 @@ export function QuickBookForm({
           >
             <div className="grid grid-cols-2 gap-3 pt-0.5">
               <Field id="date" label="Date" icon={<CalendarDays className="size-4" />} error={errors.date}>
-                <Input id="date" type="date" value={draft.date} onChange={(e) => set("date", e.target.value)} className="rounded-xl pl-9" />
+                <Input id="date" type="date" min={today} value={draft.date} onChange={(e) => set("date", e.target.value)} className="rounded-xl pl-9" />
               </Field>
               <Field id="time" label="Time" icon={<Clock className="size-4" />} error={errors.time}>
                 <Input id="time" type="time" value={draft.time} onChange={(e) => set("time", e.target.value)} className="rounded-xl pl-9" />

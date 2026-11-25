@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowRight, CarFront, Loader2, ShieldCheck, UserRound, Users } from "lucide-react";
 import { loginAs } from "@/lib/auth/actions";
-import { ROLE_INFO, ROLES, type Role } from "@/lib/auth/roles";
+import { DEMO_ROLES, ROLE_INFO, type Role } from "@/lib/auth/roles";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<Role, typeof Users> = { customer: Users, driver: UserRound, provider: CarFront, admin: ShieldCheck };
@@ -19,7 +19,7 @@ export function LoginForm() {
     <div>
       <p className="eyebrow mb-3">Demo · Continue as</p>
       <div className="space-y-2">
-        {ROLES.map((role) => {
+        {DEMO_ROLES.map((role) => {
           const Icon = ICONS[role];
           const info = ROLE_INFO[role];
           const loading = pending && chosen === role;

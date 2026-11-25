@@ -15,7 +15,7 @@ const CYCLE_MS = 3200;
 const OPTIONS: { value: TripType; label: string; text: string; icon: LucideIcon; chip: string; cta: string }[] = [
   { value: "immediate", label: "Ride now", text: "A verified driver heads your way in minutes.", icon: Zap, chip: "~4 min away", cta: "Book a ride now" },
   { value: "scheduled", label: "Schedule", text: "Lock in a pickup date and time ahead.", icon: CalendarClock, chip: "Fri · 6:30 PM", cta: "Schedule a ride" },
-  { value: "one-way", label: "One-way", text: "Point A to point B, priced upfront.", icon: ArrowRight, chip: "Upfront estimate", cta: "Book one-way" },
+  { value: "one-way", label: "One-way", text: "Point A to point B, with an upfront estimate.", icon: ArrowRight, chip: "Upfront estimate", cta: "Book one-way" },
   { value: "round-trip", label: "Round-trip", text: "Out and back with the same booking.", icon: Repeat, chip: "2 legs · same booking", cta: "Book a round-trip" },
 ];
 

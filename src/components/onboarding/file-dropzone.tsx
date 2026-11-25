@@ -27,9 +27,9 @@ export function FileDropzone({ doc, value, onChange, error }: { doc: DocumentReq
         <span className="shrink-0 text-right font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
           {doc.conditional ? "If applicable" : doc.required ? "Required" : "Optional"}
         </span>
-        <input id={id} type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) onChange(f.name); }} />
+        <input id={id} type="file" accept=".pdf,.jpg,.jpeg,.png" className="sr-only" aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} onChange={(e) => { const f = e.target.files?.[0]; if (f) onChange(f.name); }} />
       </label>
-      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      {error && <p id={`${id}-error`} role="alert" className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

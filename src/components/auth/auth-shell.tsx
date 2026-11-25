@@ -20,7 +20,7 @@ const FACTS = {
     { k: "6", v: "vehicle classes, economy to van" },
   ],
   fleet: [
-    { k: "80%", v: "of completed ride revenue" },
+    { k: "80%", v: "of completed ride revenue, before fees and adjustments" },
     { k: "6", v: "short steps to apply" },
     { k: "6", v: "vehicle classes, economy to van" },
   ],

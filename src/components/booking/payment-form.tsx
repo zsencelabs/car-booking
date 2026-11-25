@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,26 +11,48 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+/** Card-number checksum (Luhn), which catches most typos. */
+function luhn(digits: string) {
+  let sum = 0;
+  for (let i = 0; i < digits.length; i++) {
+    let d = Number(digits[digits.length - 1 - i]);
+    if (i % 2 === 1) d = d * 2 > 9 ? d * 2 - 9 : d * 2;
+    sum += d;
+  }
+  return sum % 10 === 0;
+}
+
+/** MM/YY is valid through the last day of that month. */
+function notExpired(value: string) {
+  const [mm, yy] = value.split("/").map(Number);
+  const now = new Date();
+  return 2000 + yy > now.getFullYear() || (2000 + yy === now.getFullYear() && mm >= now.getMonth() + 1);
+}
+
 const schema = z.object({
   name: z.string().trim().min(2, "Name on card is required"),
-  card: z.string().regex(/^\d{4}( ?\d{4}){3}$/, "Enter a 16-digit card number"),
-  expiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, "Use MM/YY"),
+  card: z
+    .string()
+    .transform((v) => v.replace(/[\s-]/g, ""))
+    .pipe(z.string().regex(/^\d{15,16}$/, "Enter a 15 or 16-digit card number").refine(luhn, "Check the card number")),
+  expiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, "Use MM/YY").refine(notExpired, "This card has expired"),
   cvc: z.string().regex(/^\d{3,4}$/, "3–4 digits"),
   zip: z.string().regex(/^\d{5}$/, "5-digit ZIP"),
   terms: z.boolean().refine((v) => v, "You must accept the terms"),
 });
-type Values = z.infer<typeof schema>;
+type Input = z.input<typeof schema>;
+type Values = z.output<typeof schema>;
 
 export function PaymentForm({ confirmHref }: { confirmHref: string }) {
   const router = useRouter();
-  const { register, handleSubmit, setValue, control, formState: { errors, isSubmitting } } = useForm<Values>({
+  const { register, handleSubmit, setValue, control, formState: { errors, isSubmitting } } = useForm<Input, unknown, Values>({
     resolver: zodResolver(schema),
     defaultValues: { terms: false },
   });
 
   const terms = useWatch({ control, name: "terms" });
 
-  const err = (k: keyof Values) => errors[k] && <p role="alert" className="text-xs text-destructive">{errors[k]?.message as string}</p>;
+  const err = (k: keyof Input) => errors[k] && <p role="alert" className="text-xs text-destructive">{errors[k]?.message as string}</p>;
 
   return (
     <form noValidate onSubmit={handleSubmit(() => router.push(confirmHref))} className="space-y-4 rounded-2xl border bg-card p-6">
@@ -51,7 +74,9 @@ export function PaymentForm({ confirmHref }: { confirmHref: string }) {
       <div className="space-y-1.5">
         <div className="flex items-start gap-2">
           <Checkbox id="terms" checked={terms} onCheckedChange={(v) => setValue("terms", v === true, { shouldValidate: true })} />
-          <Label htmlFor="terms" className="text-sm font-normal leading-snug">I agree to the terms and the cancellation policy.</Label>
+          <Label htmlFor="terms" className="text-sm font-normal leading-snug">
+            <span>I agree to the <Link href="/terms" target="_blank" className="underline underline-offset-4">terms</Link>. Cancellation and refund terms will be shown here before launch.</span>
+          </Label>
         </div>
         {err("terms")}
       </div>
