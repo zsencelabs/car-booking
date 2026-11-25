@@ -8,6 +8,18 @@ export const REFRESH_MAX_AGE = 30 * 24 * 60 * 60;
 
 export type TokenPair = { accessToken: string; refreshToken: string };
 
+/** The visitor's IP from Vercel's `x-forwarded-for` (first entry). */
+export const clientIpFrom = (forwardedFor: string | null) => forwardedFor?.split(",")[0]?.trim() || undefined;
+
+/**
+ * Headers that let the API rate-limit per visitor instead of per website server.
+ * The API only trusts `x-client-ip` together with the shared secret.
+ */
+export function proxyHeaders(clientIp: string | undefined): Record<string, string> {
+  const secret = process.env.API_PROXY_SECRET;
+  return secret && clientIp ? { "x-proxy-secret": secret, "x-client-ip": clientIp } : {};
+}
+
 export function apiUrl() {
   const url = process.env.API_URL;
   if (!url) throw new Error("API_URL is not set. Add it to .env.local, e.g. API_URL=http://localhost:4000");
@@ -22,7 +34,7 @@ export function apiUrl() {
 const inflight = new Map<string, { at: number; result: Promise<TokenPair | null> }>();
 const REUSE_MS = 30_000;
 
-export function refreshTokens(refreshToken: string): Promise<TokenPair | null> {
+export function refreshTokens(refreshToken: string, clientIp?: string): Promise<TokenPair | null> {
   const now = Date.now();
   for (const [key, entry] of inflight) if (now - entry.at > REUSE_MS) inflight.delete(key);
   const existing = inflight.get(refreshToken);
@@ -32,7 +44,7 @@ export function refreshTokens(refreshToken: string): Promise<TokenPair | null> {
     try {
       const res = await fetch(new URL("/auth/refresh", apiUrl()), {
         method: "POST",
-        headers: { "content-type": "application/json", accept: "application/json" },
+        headers: { "content-type": "application/json", accept: "application/json", ...proxyHeaders(clientIp) },
         body: JSON.stringify({ refreshToken }),
         cache: "no-store",
       });

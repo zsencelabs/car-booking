@@ -1,6 +1,6 @@
 import "server-only";
-import { cookies } from "next/headers";
-import { ACCESS_COOKIE, ACCESS_MAX_AGE, apiUrl, REFRESH_COOKIE, REFRESH_MAX_AGE, type TokenPair } from "./tokens";
+import { cookies, headers } from "next/headers";
+import { ACCESS_COOKIE, ACCESS_MAX_AGE, apiUrl, clientIpFrom, proxyHeaders, REFRESH_COOKIE, REFRESH_MAX_AGE, type TokenPair } from "./tokens";
 
 /** An error the API answered with. `message` is safe to show to the user. */
 export class ApiError extends Error {
@@ -42,6 +42,7 @@ export async function clearSessionCookies() {
 
 async function request(path: string, opts: Options, token: string | undefined) {
   const url = new URL(path, apiUrl());
+  const clientIp = clientIpFrom((await headers()).get("x-forwarded-for"));
   for (const [k, v] of Object.entries(opts.query ?? {})) if (v !== undefined && v !== "") url.searchParams.set(k, String(v));
   return fetch(url, {
     method: opts.method ?? "GET",
@@ -49,6 +50,7 @@ async function request(path: string, opts: Options, token: string | undefined) {
       accept: "application/json",
       ...(opts.body !== undefined && { "content-type": "application/json" }),
       ...(token && { authorization: `Bearer ${token}` }),
+      ...proxyHeaders(clientIp),
     },
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     cache: "no-store",

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { ACCESS_COOKIE, ACCESS_MAX_AGE, REFRESH_COOKIE, REFRESH_MAX_AGE, refreshTokens } from "@/lib/api/tokens";
+import { ACCESS_COOKIE, ACCESS_MAX_AGE, clientIpFrom, REFRESH_COOKIE, REFRESH_MAX_AGE, refreshTokens } from "@/lib/api/tokens";
 
 const cookieOptions = (maxAge: number) => ({
   httpOnly: true,
@@ -22,7 +22,7 @@ export async function proxy(request: NextRequest) {
   let response: NextResponse | null = null;
 
   if (!signedIn && refresh) {
-    const tokens = await refreshTokens(refresh);
+    const tokens = await refreshTokens(refresh, clientIpFrom(request.headers.get("x-forwarded-for")));
     if (tokens) {
       request.cookies.set(ACCESS_COOKIE, tokens.accessToken);
       request.cookies.set(REFRESH_COOKIE, tokens.refreshToken);
