@@ -68,7 +68,7 @@ export function draftFromParams(p: Params): BookingDraft {
     date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : "",
     time: /^\d{2}:\d{2}$/.test(time) ? time : "12:00",
     at: isIso(p.get("at")) ? p.get("at")! : undefined,
-    tripType: isTripType(tripType) ? (tripType === "one-way" ? "scheduled" : tripType) : "scheduled",
+    tripType: isTripType(tripType) ? (tripType === "one-way" ? "scheduled" : tripType) : "immediate",
     passengers: Number.isFinite(passengers) ? Math.min(Math.max(passengers, 1), MAX_PASSENGERS) : 1,
     categoryId: isCategoryId(categoryId) ? categoryId : undefined,
   };
