@@ -16,6 +16,12 @@ export interface VehicleCategory {
   baseFare: number;
   /** Per-km rate for the first 50 km. */
   perKm: number;
+  /** Photo in /public, 1200×750. */
+  image: string;
+  /** Short description of the photo, for alt text. */
+  imageAlt: string;
+  /** Unsplash photographer. */
+  photoCredit: { name: string; username: string };
   examples: string;
   eta: string;
 }

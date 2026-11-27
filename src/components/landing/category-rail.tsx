@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowUpRight, Briefcase, User } from "lucide-react";
@@ -48,6 +49,9 @@ export function CategoryRail({ categories }: { categories: VehicleCategory[] }) 
                       <motion.span layoutId="cat-hl" className="absolute inset-y-0 -left-4 -right-4 -z-10 rounded-xl bg-muted/60" transition={{ type: "spring", stiffness: 400, damping: 36 }} />
                     )}
                     <span className="w-6 font-mono text-xs text-muted-foreground">0{i + 1}</span>
+                    <span aria-hidden className={cn("relative hidden h-10 w-14 shrink-0 overflow-hidden rounded-lg transition-opacity sm:block", selected ? "opacity-100" : "opacity-50")}>
+                      <Image src={c.image} alt="" fill sizes="56px" className="object-cover" />
+                    </span>
                     <span className={cn("flex-1 text-3xl font-semibold tracking-tight transition-colors md:text-4xl", selected ? "text-foreground" : "text-muted-foreground/60")}>
                       {c.name}
                     </span>
@@ -60,7 +64,34 @@ export function CategoryRail({ categories }: { categories: VehicleCategory[] }) 
           </ul>
 
           <div className="lg:sticky lg:top-32 lg:self-start">
-            <div className="rounded-3xl border bg-card p-7">
+            <div className="overflow-hidden rounded-3xl border bg-card">
+              {/* Photo. Every class's photo is mounted so switching on hover never waits on a download. */}
+              <div className="relative aspect-[16/10] overflow-hidden">
+                {categories.map((c, i) => (
+                  <motion.div
+                    key={c.id}
+                    aria-hidden={c.id !== active.id}
+                    className="absolute inset-0"
+                    initial={false}
+                    animate={{ opacity: c.id === active.id ? 1 : 0, scale: c.id === active.id ? 1 : 1.06 }}
+                    transition={{ duration: 0.6, ease: EASE }}
+                  >
+                    <Image
+                      src={c.image} alt={c.id === active.id ? `${c.name} class: ${c.imageAlt.toLowerCase()}` : ""} fill
+                      sizes="(min-width: 1024px) 40vw, 100vw" priority={i === 0} className="object-cover"
+                    />
+                  </motion.div>
+                ))}
+                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-card via-card/10 to-transparent" />
+                <a
+                  href={`https://unsplash.com/@${active.photoCredit.username}?utm_source=dropoff&utm_medium=referral`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="absolute right-3 top-3 rounded-full bg-black/45 px-2.5 py-1 text-[10px] text-white/80 backdrop-blur hover:text-white"
+                >
+                  Photo: {active.photoCredit.name} / Unsplash
+                </a>
+              </div>
+              <div className="p-7 pt-2">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={active.id}
@@ -88,6 +119,7 @@ export function CategoryRail({ categories }: { categories: VehicleCategory[] }) 
               >
                 Book {active.name}
               </Link>
+              </div>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">Estimates only. Your price is quoted when you book and confirmed when the ride is completed.</p>
           </div>
