@@ -33,8 +33,8 @@ export function Hero({ brand, driveAction }: { brand: string; driveAction?: Reac
           <span className="h-px w-8 bg-primary" />
         </motion.p>
 
-        <h1 className="display mx-auto max-w-5xl text-[clamp(2.75rem,7.5vw,6.5rem)]">
-          <MaskLines lines={["Book the ride.", <span key="a">Pay when <span className="text-primary">you arrive.</span></span>]} />
+        <h1 className="display mx-auto max-w-3xl text-[clamp(2.25rem,5vw,4.25rem)]">
+          <MaskLines lines={["We’re on", <span key="a" className="text-primary">your schedule.</span>]} />
         </h1>
 
         <motion.p
@@ -45,7 +45,7 @@ export function Hero({ brand, driveAction }: { brand: string; driveAction?: Reac
         </motion.p>
 
         <motion.div
-          className="mx-auto mt-9 max-w-5xl"
+          className="mx-auto mt-8 max-w-5xl"
           initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.6, ease: EASE }}
         >
           <QuickBookForm layout="bar" submitLabel="Search" />
