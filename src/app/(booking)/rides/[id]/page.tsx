@@ -103,7 +103,7 @@ async function RideContent({ params }: Pick<PageProps<"/rides/[id]">, "params">)
             <div className="flex gap-3"><MapPin className="mt-0.5 size-4 shrink-0 text-brand-ink" /><div><dt className="text-xs text-muted-foreground">Pickup</dt><dd>{booking.pickupAddress}</dd></div></div>
             <div className="flex gap-3"><Navigation className="mt-0.5 size-4 shrink-0 text-brand-ink" /><div><dt className="text-xs text-muted-foreground">Destination</dt><dd>{booking.dropoffAddress}</dd></div></div>
           </dl>
-          <p className="border-t pt-3 text-muted-foreground">{booking.distanceMiles} mi · about {booking.durationMinutes} min{booking.tripType === "ROUND_TRIP" ? " each way" : ""} · {booking.passengers} {booking.passengers === 1 ? "passenger" : "passengers"}</p>
+          <p className="border-t pt-3 text-muted-foreground">{booking.distanceKm} km · about {booking.durationMinutes} min{booking.tripType === "ROUND_TRIP" ? " each way" : ""} · {booking.passengers} {booking.passengers === 1 ? "passenger" : "passengers"}</p>
           <div className="flex justify-between border-t pt-3">
             <span>{booking.finalFareCents !== null ? "Final fare" : "Upfront price"}</span>
             <span className="font-semibold">{money(fare)}</span>

@@ -33,8 +33,8 @@ export type Category = {
   passengers: number;
   luggage: number;
   baseFareCents: number;
-  perMileCents: number;
-  perMinuteCents: number;
+  /** Per-km rate for each 50 km band: [0–50 km, 50–100 km, ...]. The last one applies beyond. */
+  perKmBandCents: number[];
   minimumFareCents: number;
   examples: string;
   active: boolean;
@@ -52,7 +52,7 @@ export type Quote = {
 };
 
 export type QuoteResponse = {
-  route: { distanceMiles: number; durationMinutes: number; roundTrip: boolean };
+  route: { distanceMiles: number; distanceKm: number; durationMinutes: number; roundTrip: boolean };
   expiresAt: string;
   quotes: Quote[];
 };
@@ -72,6 +72,7 @@ export type Booking = {
   dropoffLng: number;
   scheduledAt: string;
   distanceMiles: number;
+  distanceKm: number;
   durationMinutes: number;
   quotedFareCents: number;
   finalFareCents: number | null;
@@ -105,6 +106,7 @@ export type Job = {
   dropoffAddress: string;
   scheduledAt: string;
   distanceMiles: number;
+  distanceKm: number;
   durationMinutes: number;
   category: { name: string };
   estimatedPayCents: number | null;

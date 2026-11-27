@@ -76,10 +76,9 @@ export function CategoryRail({ categories }: { categories: VehicleCategory[] }) 
                     <Capacity label="Luggage" icon={<Briefcase className="size-3.5" />} n={active.luggage} max={8} />
                   </div>
 
-                  <dl className="mt-8 grid grid-cols-3 gap-4 border-t pt-6 font-mono text-sm">
+                  <dl className="mt-8 grid grid-cols-2 gap-4 border-t pt-6 font-mono text-sm">
                     <div><dt className="text-xs text-muted-foreground">Base</dt><dd className="mt-1">{usd(active.baseFare)}</dd></div>
-                    <div><dt className="text-xs text-muted-foreground">Per mile</dt><dd className="mt-1">{usd(active.perMile)}</dd></div>
-                    <div><dt className="text-xs text-muted-foreground">Per min</dt><dd className="mt-1">{usd(active.perMinute)}</dd></div>
+                    <div><dt className="text-xs text-muted-foreground">Per km, first 50 km</dt><dd className="mt-1">{usd(active.perKm)}</dd></div>
                   </dl>
                 </motion.div>
               </AnimatePresence>

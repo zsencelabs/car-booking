@@ -169,3 +169,23 @@ export async function updateLicense(values: Record<string, string>): Promise<Res
   if (!parsed.success) return { ok: false, error: "Please check the highlighted fields.", fields: Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message])) };
   return run(() => api("/drivers/me", { method: "PATCH", body: parsed.data }), "driver");
 }
+
+/** Dollars typed in a form, as whole cents. */
+const dollars = (max: number) => z.coerce.number().min(0, "Can't be negative").max(max, `At most $${max}`).transform((v) => Math.round(v * 100));
+
+const pricingSchema = z.object({
+  baseFareCents: dollars(500),
+  minimumFareCents: dollars(500),
+  perKmBandCents: z.array(dollars(20)).min(1, "Add at least one band").max(20, "Up to 20 bands"),
+});
+
+/** Sets a vehicle class's base fare, minimum fare and per-km band rates. The API audits every change. */
+export async function updatePricing(categoryId: string, values: { baseFare: string; minimumFare: string; bands: string[] }): Promise<Result> {
+  const denied = await signedIn("admin");
+  if (denied) return denied;
+  const parsed = pricingSchema.safeParse({ baseFareCents: values.baseFare, minimumFareCents: values.minimumFare, perKmBandCents: values.bands });
+  if (!id.safeParse(categoryId).success || !parsed.success) {
+    return { ok: false, error: parsed.error?.issues[0]?.message ?? "Please check the rates." };
+  }
+  return run(() => api(`/admin/vehicle-categories/${path(categoryId)}`, { method: "PATCH", body: parsed.data }), "admin");
+}

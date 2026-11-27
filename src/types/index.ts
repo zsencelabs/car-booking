@@ -14,8 +14,8 @@ export interface VehicleCategory {
   luggage: number;
   /** Display-only. Real pricing is computed by the backend (PRD §15 rule 18). */
   baseFare: number;
-  perMile: number;
-  perMinute: number;
+  /** Per-km rate for the first 50 km. */
+  perKm: number;
   examples: string;
   eta: string;
 }

@@ -153,8 +153,8 @@ async function driver(tz: string): Promise<DashboardConfig> {
     tint: CLASS_PAINT[art(j.categoryId)],
     price: (j.estimatedPayCents ?? 0) / 100,
     unit: j.estimatedPayCents === null ? "pay not set" : "est. pay",
-    distance: j.distanceMiles,
-    meta: `${j.distanceMiles} mi${j.tripType === "ROUND_TRIP" ? " each way" : ""} · ${plural(j.passengers, "rider")}`,
+    distance: j.distanceKm,
+    meta: `${j.distanceKm} km${j.tripType === "ROUND_TRIP" ? " each way" : ""} · ${plural(j.passengers, "rider")}`,
     status: "New",
     facets: { "Ride type": j.timing === "IMMEDIATE" ? "Now" : j.tripType === "ROUND_TRIP" ? "Round trip" : "Scheduled", Class: j.category.name, Company: j.provider.name },
     action: { label: "Accept", done: "Accepted", op: { kind: "job.accept", id: j.id } },
@@ -387,7 +387,7 @@ async function provider(tz: string): Promise<DashboardConfig> {
 // ── Admin ──
 
 async function admin(tz: string): Promise<DashboardConfig> {
-  const [bookings, pendingDrivers, pendingProviders, pendingVehicles, drivers, providers, vehicles, audit] = await Promise.all([
+  const [bookings, pendingDrivers, pendingProviders, pendingVehicles, drivers, providers, vehicles, audit, categories] = await Promise.all([
     api<Page<Booking>>("/admin/bookings", { query: { limit: 100 } }),
     api<Page<AdminDriver>>("/admin/drivers", { query: { status: "PENDING", limit: 50 } }),
     api<Page<AdminProvider>>("/admin/providers", { query: { status: "PENDING", limit: 50 } }),
@@ -396,6 +396,7 @@ async function admin(tz: string): Promise<DashboardConfig> {
     api<Page<AdminProvider>>("/admin/providers", { query: { limit: 100 } }),
     api<Page<Vehicle>>("/admin/vehicles", { query: { limit: 100 } }),
     api<Page<AuditEntry>>("/admin/audit-logs", { query: { limit: 50 } }),
+    api<Category[]>("/admin/vehicle-categories"),
   ]);
 
   const decide = (entity: "drivers" | "providers" | "vehicles", id: string): RowAction[] => [
@@ -432,6 +433,7 @@ async function admin(tz: string): Promise<DashboardConfig> {
       { id: "verification", label: "Verification", icon: "shield" },
       { id: "people", label: "Drivers & fleets", icon: "users" },
       { id: "vehicles", label: "Vehicles", icon: "car" },
+      { id: "pricing", label: "Pricing", icon: "card" },
       { id: "audit", label: "Audit log", icon: "scroll" },
     ],
     workspace: {
@@ -496,6 +498,20 @@ async function admin(tz: string): Promise<DashboardConfig> {
           })),
           empty: "No vehicles yet.",
         }],
+      },
+      pricing: {
+        title: "Pricing",
+        text: "Each vehicle class is priced by distance in 50 km bands, each with its own rate per km. A 120 km trip pays the first band's rate for 0–50 km, the second band's for 50–100 km and the third band's for the last 20 km. The last band's rate keeps applying beyond it. New prices apply to new quotes; booked rides keep their price.",
+        stats: [
+          { k: String(categories.filter((c) => c.active).length), v: "active vehicle classes" },
+          { k: categories.length ? `${money(Math.min(...categories.map((c) => c.perKmBandCents[0])))}/km` : "—", v: "lowest first-band rate" },
+          { k: String(audit.items.filter((a) => a.action.startsWith("category.")).length), v: "recent price changes" },
+        ],
+        forms: [{
+          type: "pricing",
+          categories: categories.map((c) => ({ id: c.id, name: c.name, active: c.active, baseFareCents: c.baseFareCents, minimumFareCents: c.minimumFareCents, perKmBandCents: c.perKmBandCents })),
+        }],
+        sections: [],
       },
       audit: {
         title: "Audit log", text: "Sensitive changes, newest first.",

@@ -2,13 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Check, Copy, Loader2 } from "lucide-react";
+import { Check, Copy, Loader2, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { acceptInvitation, addVehicle, assignVehicle, inviteDriver, setDriverPay, updateLicense, type Result } from "@/lib/dashboards/actions";
-import type { PanelForm } from "@/lib/dashboards/types";
+import { acceptInvitation, addVehicle, assignVehicle, inviteDriver, setDriverPay, updateLicense, updatePricing, type Result } from "@/lib/dashboards/actions";
+import type { PanelForm, PricingCategory } from "@/lib/dashboards/types";
+import { money } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const card = "rounded-2xl bg-card p-5 ring-1 ring-foreground/5";
@@ -248,6 +249,109 @@ function LicenseForm({ licenseNumber, licenseState, licenseExpiresAt }: { licens
   );
 }
 
+/** Matches the API: each band is this many km wide. */
+const BAND_KM = 50;
+const EXAMPLE_KM = 120;
+const toDollars = (cents: number) => (cents / 100).toFixed(2);
+const toCents = (v: string) => Math.round((Number(v) || 0) * 100);
+
+/** Same rule as the API: each 50 km band at its own rate; the last rate applies beyond. */
+function exampleFareCents(base: number, minimum: number, bands: number[], km: number) {
+  let total = base;
+  for (let i = 0, from = 0; from < km; i++, from += BAND_KM) {
+    const last = i >= bands.length - 1;
+    total += bands[Math.min(i, bands.length - 1)] * (last ? km - from : Math.min(BAND_KM, km - from));
+    if (last) break;
+  }
+  return Math.max(Math.round(total), minimum);
+}
+
+function PricingCard({ category }: { category: PricingCategory }) {
+  const { pending, error, submit } = useSubmit();
+  const [baseFare, setBaseFare] = useState(toDollars(category.baseFareCents));
+  const [minimumFare, setMinimumFare] = useState(toDollars(category.minimumFareCents));
+  const [bands, setBands] = useState(category.perKmBandCents.map(toDollars));
+  const example = exampleFareCents(toCents(baseFare), toCents(minimumFare), bands.map(toCents), EXAMPLE_KM);
+  const field = `${category.id}-`;
+
+  return (
+    <section className={card}>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-[15px] font-semibold tracking-tight">{category.name}</h2>
+        {!category.active && <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Hidden from riders</span>}
+      </div>
+      <form
+        className="mt-4 space-y-4"
+        onSubmit={(e) => { e.preventDefault(); submit(() => updatePricing(category.id, { baseFare, minimumFare, bands }), `${category.name} prices saved`); }}
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <MoneyInput id={`${field}base`} label="Base fare" value={baseFare} onChange={setBaseFare} max={500} />
+          <MoneyInput id={`${field}min`} label="Minimum fare" value={minimumFare} onChange={setMinimumFare} max={500} />
+        </div>
+
+        <fieldset className="space-y-2">
+          <legend className="mb-2 text-sm font-medium">Rate per km</legend>
+          {bands.map((v, i) => {
+            const last = i === bands.length - 1;
+            return (
+              <div key={i} className="grid grid-cols-[8.5rem_1fr] items-center gap-3">
+                <Label htmlFor={`${field}band-${i}`} className="font-mono text-xs text-muted-foreground">
+                  {i * BAND_KM}–{last ? "∞" : (i + 1) * BAND_KM} km
+                </Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">$</span>
+                  <Input
+                    id={`${field}band-${i}`} type="number" inputMode="decimal" min={0} max={20} step={0.01} required value={v}
+                    onChange={(e) => setBands((b) => b.map((x, j) => (j === i ? e.target.value : x)))}
+                    className="h-9 w-28"
+                  />
+                  <span className="text-sm text-muted-foreground">/km</span>
+                </div>
+              </div>
+            );
+          })}
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button type="button" size="sm" variant="outline" disabled={bands.length >= 20} onClick={() => setBands((b) => [...b, b[b.length - 1]])}>
+              <Plus aria-hidden className="size-3.5" />Add band
+            </Button>
+            <Button type="button" size="sm" variant="outline" disabled={bands.length <= 1} onClick={() => setBands((b) => b.slice(0, -1))}>
+              <Minus aria-hidden className="size-3.5" />Remove last band
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            The last rate applies to every km beyond {(bands.length - 1) * BAND_KM} km.
+          </p>
+        </fieldset>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+          <p className="text-sm text-muted-foreground">
+            A {EXAMPLE_KM} km one-way ride: <span className="font-medium text-foreground">{money(example)}</span>
+          </p>
+          <Button type="submit" disabled={pending}>{pending && <Loader2 aria-hidden className="size-4 animate-spin" />}Save</Button>
+        </div>
+        <Problem text={error} />
+      </form>
+    </section>
+  );
+}
+
+function MoneyInput({ id, label, value, onChange, max }: { id: string; label: string; value: string; onChange: (v: string) => void; max: number }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">$</span>
+        <Input id={id} type="number" inputMode="decimal" min={0} max={max} step={0.01} required value={value} onChange={(e) => onChange(e.target.value)} className="h-9" />
+      </div>
+    </div>
+  );
+}
+
+function PricingForm({ categories }: { categories: PricingCategory[] }) {
+  if (!categories.length) return <section className={card}><p className="text-sm text-muted-foreground">No vehicle classes yet.</p></section>;
+  return <div className="grid gap-5 lg:grid-cols-2">{categories.map((c) => <PricingCard key={c.id} category={c} />)}</div>;
+}
+
 export function PanelForms({ forms }: { forms: PanelForm[] }) {
   return (
     <div className="space-y-5">
@@ -258,6 +362,7 @@ export function PanelForms({ forms }: { forms: PanelForm[] }) {
           case "assign": return <AssignForm key="assign" vehicles={f.vehicles} drivers={f.drivers} />;
           case "compensation": return <CompensationForm key="compensation" percent={f.percent} />;
           case "vehicle": return <VehicleForm key="vehicle" categories={f.categories} />;
+          case "pricing": return <PricingForm key="pricing" categories={f.categories} />;
           case "license": return <LicenseForm key="license" licenseNumber={f.licenseNumber} licenseState={f.licenseState} licenseExpiresAt={f.licenseExpiresAt} />;
         }
       })}

@@ -35,7 +35,11 @@ export type PanelForm =
   | { type: "assign"; vehicles: { id: string; label: string }[]; drivers: { id: string; label: string }[] }
   | { type: "compensation"; percent: number | null }
   | { type: "license"; licenseNumber: string; licenseState: string; licenseExpiresAt: string }
-  | { type: "vehicle"; categories: { id: string; name: string; passengers: number }[] };
+  | { type: "vehicle"; categories: { id: string; name: string; passengers: number }[] }
+  | { type: "pricing"; categories: PricingCategory[] };
+
+/** A vehicle class's fare settings, in cents. */
+export type PricingCategory = { id: string; name: string; active: boolean; baseFareCents: number; minimumFareCents: number; perKmBandCents: number[] };
 
 export type PanelData = {
   title: string;
