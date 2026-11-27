@@ -17,15 +17,15 @@ export const SAFETY_FEATURES = [
 
 /** Sample placeholder quotes — replace with real customer, driver and provider reviews before launch. */
 export const TESTIMONIALS = [
-  { name: "Sarah M.", role: "Customer", text: "Booked an SUV for the family in under a minute. Driver was on time and the car spotless." },
-  { name: "James R.", role: "Driver", text: "I can browse jobs that fit my area and vehicle, and tips show up clearly in my earnings." },
-  { name: "Metro Limo Co.", role: "Fleet provider", text: "Managing vehicles and drivers in one place has made our operation far easier." },
-  { name: "Priya K.", role: "Customer", text: "I scheduled my airport ride the night before and knew exactly who was picking me up." },
-  { name: "Daniel O.", role: "Driver", text: "Every tip goes straight to me, and I can see it separately from my ride pay." },
-  { name: "Bayline Transit", role: "Fleet provider", text: "We see our share the moment a ride completes. No chasing spreadsheets at month end." },
-  { name: "Marcus T.", role: "Customer", text: "Nothing was charged until I got out of the car. That alone made me switch." },
-  { name: "Elena V.", role: "Driver", text: "The checks took a few days, but riders trust you more because everyone goes through them." },
-  { name: "Grace L.", role: "Customer", text: "Seeing the driver's name, plate and rating before pickup makes late rides feel safe." },
+  { name: "Priya K.", role: "Rider", detail: "Airport pickup · LAX", rating: 5, text: "I booked my LAX pickup before boarding and knew exactly who was meeting me at arrivals." },
+  { name: "James R.", role: "Driver", detail: "Independent driver · 2 years", rating: 4, text: "I can browse jobs that fit my area and vehicle, and tips show up clearly in my earnings." },
+  { name: "Metro Limo Co.", role: "Fleet", detail: "Fleet company · 18 vehicles", rating: 5, text: "Managing vehicles and drivers in one place has made our operation far easier." },
+  { name: "Sarah M.", role: "Rider", detail: "Family trip · SUV", rating: 5, text: "Booked an SUV for the family in under a minute. Driver was on time and the car spotless." },
+  { name: "Daniel O.", role: "Driver", detail: "Fleet driver · Burbank", rating: 5, text: "Every tip goes straight to me, and I can see it separately from my ride pay." },
+  { name: "Bayline Transit", role: "Fleet", detail: "Fleet company · 42 vehicles", rating: 4, text: "We see our share the moment a ride completes. No chasing spreadsheets at month end." },
+  { name: "Marcus T.", role: "Rider", detail: "Airport pickup · SNA", rating: 5, text: "Nothing was charged until I got out of the car. That alone made me switch." },
+  { name: "Elena V.", role: "Driver", detail: "Independent driver · 6 months", rating: 4, text: "The checks took a few days, but riders trust you more because everyone goes through them." },
+  { name: "Grace L.", role: "Rider", detail: "Late arrival · SAN", rating: 5, text: "Seeing the driver's name, plate and rating before pickup makes late rides feel safe." },
 ] as const;
 
 export const FAQS = [

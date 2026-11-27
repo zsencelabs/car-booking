@@ -2,14 +2,27 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
-import { Pause, Play } from "lucide-react";
+import { Building2, Car, ChevronLeft, ChevronRight, Pause, Play, Quote, Star, User, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EASE, MaskLines } from "./reveal";
 
-type Testimonial = { name: string; role: string; text: string };
+type Role = "Rider" | "Driver" | "Fleet";
+type Testimonial = { name: string; role: Role; detail: string; rating: number; text: string };
 
 const SLIDE_MS = 4200;
-const VISIBLE = 4;
+
+const FILTERS: { value: Role | "All"; label: string }[] = [
+  { value: "All", label: "All reviews" },
+  { value: "Rider", label: "Riders" },
+  { value: "Driver", label: "Drivers" },
+  { value: "Fleet", label: "Fleets" },
+];
+
+const BADGE: Record<Role, { icon: LucideIcon; className: string }> = {
+  Rider: { icon: User, className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" },
+  Driver: { icon: Car, className: "bg-amber-500/10 text-amber-700 dark:text-amber-400" },
+  Fleet: { icon: Building2, className: "bg-sky-500/10 text-sky-700 dark:text-sky-400" },
+};
 
 const initials = (name: string) =>
   name.split(/\s+/).filter((w) => /^[A-Za-z]/.test(w)).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
@@ -20,37 +33,49 @@ export function Testimonials({ items }: { items: readonly Testimonial[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { margin: "-80px" });
   const reduce = !!useReducedMotion();
-  const [active, setActive] = useState(0);
+  const [filter, setFilter] = useState<Role | "All">("All");
+  const [start, setStart] = useState(0);
+  const [direction, setDirection] = useState(1);
   // Paused by the button (stays paused), or while the pointer or focus is inside.
   const [paused, setPaused] = useState(false);
   const [holding, setHolding] = useState(false);
-  const n = items.length;
-  const playing = inView && !reduce && !paused && !holding;
 
-  // One timer per slide; only while playing. A click restarts it from that slide.
+  const shown = filter === "All" ? items : items.filter((t) => t.role === filter);
+  const n = shown.length;
+  const playing = inView && !reduce && !paused && !holding && n > 1;
+  // Endless row: the current review first, then the ones after it, wrapping around.
+  const row = Array.from({ length: n }, (_, k) => shown[(start + k) % n]);
+
+  function step(by: number) {
+    setDirection(by);
+    setStart((s) => (s + by + n) % n);
+  }
+
+  function pick(value: Role | "All") {
+    setFilter(value);
+    setStart(0);
+    setDirection(1);
+  }
+
+  // One timer per slide, only while playing. Moving by hand restarts it.
   useEffect(() => {
     if (!playing) return;
-    const t = setTimeout(() => setActive((a) => (a + 1) % n), SLIDE_MS);
+    const t = setTimeout(() => { setDirection(1); setStart((s) => (s + 1) % n); }, SLIDE_MS);
     return () => clearTimeout(t);
-  }, [active, playing, n]);
-
-  const current = items[active];
-  const words = current.text.split(" ");
-  // Endless window: the active author first, then the next ones, wrapping around.
-  const track = Array.from({ length: Math.min(VISIBLE, n) }, (_, k) => (active + k) % n);
+  }, [start, playing, n]);
 
   return (
     <section className="border-t bg-background py-24 md:py-32">
       <div className="mx-auto max-w-site px-4">
-        <div className="mb-14 grid gap-6 lg:grid-cols-2 lg:items-end lg:gap-16">
+        <div className="mb-10 grid gap-6 lg:grid-cols-2 lg:items-end lg:gap-16">
           <div>
-            <p className="eyebrow mb-5">06 — In their words</p>
+            <p className="eyebrow mb-5">06 — Reviews</p>
             <h2 className="display text-4xl md:text-6xl">
-              <MaskLines lines={["Riders, drivers", <span key="b" className="text-muted-foreground">and fleets agree.</span>]} />
+              <MaskLines lines={["What riders, drivers", <span key="b" className="text-muted-foreground">and fleets say.</span>]} />
             </h2>
           </div>
-          <p className="max-w-lg text-muted-foreground">
-            Every side of the marketplace runs on the same rules: verified people, clear pricing and pay that shows up where it should.
+          <p className="max-w-lg text-muted-foreground lg:justify-self-end">
+            Every side of the marketplace uses the same rules: verified drivers, upfront prices and pay that shows up where it should.
           </p>
         </div>
 
@@ -61,104 +86,127 @@ export function Testimonials({ items }: { items: readonly Testimonial[] }) {
           onFocus={() => setHolding(true)}
           onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setHolding(false); }}
         >
-          {/* featured quote */}
-          <figure className="relative min-h-[240px] md:min-h-[260px]">
-            <div className="flex items-start justify-between">
-              <span aria-hidden className="block font-serif text-7xl leading-none text-primary md:text-8xl">&ldquo;</span>
-              <span className="flex items-center gap-3 pt-4 font-mono text-[11px] text-muted-foreground">
-                {pad(active + 1)} / {pad(n)}
-                {!reduce && (
-                  <button
-                    type="button"
-                    onClick={() => setPaused((p) => !p)}
-                    aria-label={paused ? "Play testimonials" : "Pause testimonials"}
-                    className="grid size-7 place-items-center rounded-full border text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {paused ? <Play aria-hidden className="size-3" /> : <Pause aria-hidden className="size-3" />}
-                  </button>
-                )}
-              </span>
-            </div>
-            <div aria-live={playing ? "off" : "polite"}>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.blockquote
-                  key={active}
-                  exit={{ opacity: 0, y: -10, filter: "blur(6px)" }}
-                  transition={{ duration: 0.25 }}
-                  className="-mt-6 max-w-4xl text-2xl font-medium leading-snug tracking-tight md:-mt-8 md:text-4xl"
-                >
-                  {words.map((w, i) => (
-                    <motion.span
-                      key={i}
-                      className="inline-block"
-                      initial={reduce ? false : { opacity: 0, y: 10, filter: "blur(6px)" }}
-                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                      transition={{ duration: 0.4, delay: reduce ? 0 : i * 0.02, ease: EASE }}
-                    >
-                      {w}
-                      {i < words.length - 1 && " "}
-                    </motion.span>
-                  ))}
-                </motion.blockquote>
-              </AnimatePresence>
-            </div>
-          </figure>
-
-          {/* endless author track */}
-          <div className="mt-10 grid grid-cols-2 overflow-hidden border-t md:grid-cols-4">
-            <AnimatePresence mode="popLayout" initial={false}>
-              {track.map((idx, k) => {
-                const t = items[idx];
-                const on = k === 0;
+          {/* filters + controls */}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div role="tablist" aria-label="Filter reviews" className="flex flex-wrap gap-2">
+              {FILTERS.map((f) => {
+                const count = f.value === "All" ? items.length : items.filter((t) => t.role === f.value).length;
+                const on = filter === f.value;
                 return (
-                  <motion.button
-                    key={t.name}
-                    layout={!reduce}
-                    initial={{ opacity: 0, x: 40 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -40 }}
-                    transition={{ duration: 0.45, ease: EASE }}
-                    type="button"
-                    onClick={() => setActive(idx)}
-                    aria-pressed={on}
-                    aria-label={`${t.name}, ${t.role}`}
+                  <button
+                    key={f.value} type="button" role="tab" aria-selected={on}
+                    onClick={() => pick(f.value)}
                     className={cn(
-                      "group relative flex items-center gap-3 pr-3 pt-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      k >= 2 && "hidden md:flex",
+                      "inline-flex h-10 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      on ? "border-foreground bg-foreground text-background" : "bg-background text-foreground hover:bg-muted",
                     )}
                   >
-                    <span aria-hidden className="absolute inset-x-0 -top-px h-px overflow-hidden">
-                      {on && (
-                        <motion.span
-                          key={`${active}-${playing}`}
-                          className="block h-full bg-primary"
-                          initial={{ width: reduce ? "100%" : "0%" }}
-                          animate={{ width: reduce || playing ? "100%" : "0%" }}
-                          transition={{ duration: reduce ? 0 : SLIDE_MS / 1000, ease: "linear" }}
-                        />
-                      )}
-                    </span>
-                    <span
-                      className={cn(
-                        "grid size-10 shrink-0 place-items-center rounded-full text-xs font-semibold transition-colors duration-300",
-                        on ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground group-hover:text-foreground",
-                      )}
-                    >
-                      {initials(t.name)}
-                    </span>
-                    <span className="min-w-0">
-                      <span className={cn("block truncate text-sm font-medium transition-colors duration-300", !on && "text-muted-foreground group-hover:text-foreground")}>
-                        {t.name}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">{t.role}</span>
-                    </span>
-                  </motion.button>
+                    {f.label}
+                    <span className={cn("font-mono text-xs", on ? "text-background/70" : "text-muted-foreground")}>{count}</span>
+                  </button>
                 );
               })}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="mr-2 font-mono text-xs tabular-nums text-muted-foreground" aria-live="polite">
+                {pad(n ? start + 1 : 0)} / {pad(n)}
+              </span>
+              {!reduce && (
+                <RoundButton label={paused ? "Play reviews" : "Pause reviews"} onClick={() => setPaused((p) => !p)}>
+                  {paused ? <Play aria-hidden className="size-4" /> : <Pause aria-hidden className="size-4" />}
+                </RoundButton>
+              )}
+              <RoundButton label="Previous review" onClick={() => step(-1)} disabled={n <= 1}>
+                <ChevronLeft aria-hidden className="size-4" />
+              </RoundButton>
+              <RoundButton label="Next review" onClick={() => step(1)} disabled={n <= 1} solid>
+                <ChevronRight aria-hidden className="size-4" />
+              </RoundButton>
+            </div>
+          </div>
+
+          {/* cards: 1 on phones, 2 on tablets, 3 on desktop */}
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+              {row.map((t, k) => (
+                <motion.figure
+                  key={`${filter}-${t.name}`}
+                  layout={!reduce}
+                  custom={direction}
+                  initial={reduce ? false : { opacity: 0, x: 40 * direction }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={reduce ? undefined : { opacity: 0, x: -40 * direction }}
+                  transition={{ duration: 0.45, ease: EASE }}
+                  className={cn(
+                    "flex flex-col rounded-2xl border bg-card p-6 shadow-sm",
+                    k >= 1 && "hidden md:flex",
+                    k >= 2 && "md:hidden lg:flex",
+                    k >= 3 && "lg:hidden",
+                  )}
+                >
+                  <div className="flex items-start justify-between">
+                    <Stars rating={t.rating} />
+                    <Quote aria-hidden className="size-5 text-muted-foreground/40" />
+                  </div>
+                  <blockquote className="mt-4 flex-1 text-[15px] leading-relaxed">{t.text}</blockquote>
+                  <figcaption className="mt-6 flex items-center gap-3 border-t pt-5">
+                    <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                      {initials(t.name)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">{t.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{t.detail}</span>
+                    </span>
+                    <RoleBadge role={t.role} />
+                  </figcaption>
+                </motion.figure>
+              ))}
             </AnimatePresence>
           </div>
         </div>
+
+        <p className="mt-6 text-xs text-muted-foreground">
+          Sample reviews for the design preview. At launch, only riders, drivers and fleets with a completed ride can leave a review.
+        </p>
       </div>
     </section>
+  );
+}
+
+function RoundButton({ label, onClick, disabled, solid, children }: { label: string; onClick: () => void; disabled?: boolean; solid?: boolean; children: React.ReactNode }) {
+  return (
+    <button
+      type="button" aria-label={label} onClick={onClick} disabled={disabled}
+      className={cn(
+        "grid size-10 place-items-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40",
+        solid ? "border-foreground bg-foreground text-background hover:opacity-90" : "bg-background text-foreground hover:bg-muted",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Stars({ rating }: { rating: number }) {
+  return (
+    <span role="img" aria-label={`${rating} out of 5 stars`} className="flex gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i} aria-hidden strokeWidth={1.75}
+          className={cn("size-4", i < rating ? "fill-primary text-brand-ink" : "text-muted-foreground/40")}
+        />
+      ))}
+    </span>
+  );
+}
+
+function RoleBadge({ role }: { role: Role }) {
+  const { icon: Icon, className } = BADGE[role];
+  return (
+    <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium", className)}>
+      <Icon aria-hidden className="size-3.5" />
+      {role}
+    </span>
   );
 }
