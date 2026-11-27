@@ -40,6 +40,8 @@ export type BookingStatus =
   | "Refunded";
 
 export interface BookingDraft {
+  /** The pickup airport's code (see `AIRPORTS`). Pickup address and coordinates come from it. */
+  pickupCode?: string;
   pickup: string;
   pickupLat?: number;
   pickupLng?: number;

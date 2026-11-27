@@ -1,4 +1,5 @@
 import type { BookingDraft, TripType } from "@/types";
+import { airportAddress, airportByCode } from "@/lib/airports";
 
 /** How the ride form offers timing and direction. "one-way" is kept for older links and means a scheduled one-way ride. */
 export const TRIP_TYPES: { value: TripType; label: string }[] = [
@@ -18,9 +19,13 @@ export function apiTrip(tripType: TripType) {
 export const tripLabel = (tripType: TripType) =>
   tripType === "immediate" ? "Ride now" : tripType === "round-trip" ? "Round trip" : "Scheduled";
 
+/** Pickup address and coordinates aren't written: they come from `pickupCode`. */
+const DERIVED = new Set(["pickup", "pickupLat", "pickupLng"]);
+
 export function draftToParams(d: Partial<BookingDraft>) {
   const p = new URLSearchParams();
   Object.entries(d).forEach(([k, v]) => {
+    if (DERIVED.has(k)) return;
     if (v !== undefined && v !== "") p.set(k, String(v));
   });
   return p;
@@ -50,10 +55,13 @@ export function draftFromParams(p: Params): BookingDraft {
   const date = p.get("date") ?? "";
   const time = p.get("time") ?? "";
   const passengers = Math.trunc(Number(p.get("passengers") ?? 1));
+  // Pickups are airports only, so a pickup typed into the URL is ignored.
+  const airport = airportByCode(p.get("pickupCode"));
   return {
-    pickup: (p.get("pickup") ?? "").slice(0, 300),
-    pickupLat: coord(p.get("pickupLat"), 90),
-    pickupLng: coord(p.get("pickupLng"), 180),
+    pickupCode: airport?.code,
+    pickup: airport ? airportAddress(airport) : "",
+    pickupLat: airport?.lat,
+    pickupLng: airport?.lng,
     destination: (p.get("destination") ?? "").slice(0, 300),
     destinationLat: coord(p.get("destinationLat"), 90),
     destinationLng: coord(p.get("destinationLng"), 180),

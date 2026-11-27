@@ -283,7 +283,7 @@ export function LiveDispatchMap({ className }: { className?: string }) {
           </g>
 
           {/* level labels (screen space) */}
-          <MapLabel x={P.x - 8} y={P.y + 28} anchor="start" prefix="Pickup" text="Union Station" />
+          <MapLabel x={P.x - 8} y={P.y + 28} anchor="start" prefix="Pickup" text="LAX" />
           <MapLabel x={D.x - 18} y={D.y - 8} anchor="end" prefix="Drop-off" text="1400 Market St" />
           <AnimatePresence>
             {shown === 0 &&

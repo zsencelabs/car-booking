@@ -204,8 +204,8 @@ function PageTitle({ children, sub }: { children: React.ReactNode; sub?: string 
 }
 
 function WhereScreen({ instant }: { instant: boolean }) {
-  const pickup = useTypewriter("1 Ferry Building, SF", 300, instant);
-  const drop = useTypewriter("Oracle Park, SF", 1400, instant);
+  const pickup = useTypewriter("LAX, 1 World Way", 300, instant);
+  const drop = useTypewriter("Santa Monica Pier", 1400, instant);
   const when = useAfter(2300, instant);
   const ready = useAfter(2800, instant);
   return (
@@ -279,7 +279,7 @@ function PickScreen({ instant }: { instant: boolean }) {
   const sel = picked ? 2 : 0;
   return (
     <div className="flex h-full flex-col">
-      <PageTitle sub="Ferry Building → Oracle Park · Today 6:30 PM">Choose a vehicle</PageTitle>
+      <PageTitle sub="LAX → Santa Monica Pier · Today 6:30 PM">Choose a vehicle</PageTitle>
       <div className="grid gap-2 @lg:grid-cols-3 @lg:gap-3">
         {RIDES.map((r, i) => (
           <motion.div
@@ -349,8 +349,8 @@ function ConfirmScreen({ instant }: { instant: boolean }) {
           </AnimatePresence>
         </div>
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <Info k="Pickup" v="Ferry Building" />
-          <Info k="Drop-off" v="Oracle Park" />
+          <Info k="Pickup" v="LAX" />
+          <Info k="Drop-off" v="Santa Monica Pier" />
           <Info k="Time" v="Today, 6:30 PM" />
           <Info k="Plate" v={found ? "8KZM214" : "—"} mono />
         </div>
@@ -384,7 +384,7 @@ function PayScreen({ instant }: { instant: boolean }) {
       <div className="grid gap-3 @lg:grid-cols-[1.3fr_1fr]">
         <div className="rounded-2xl border p-4">
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>Ferry Building</span><span>Oracle Park</span>
+            <span>LAX</span><span>Santa Monica Pier</span>
           </div>
           <div className="relative mt-4 h-1.5 rounded-full bg-muted">
             <motion.div

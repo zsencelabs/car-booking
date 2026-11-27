@@ -1,7 +1,7 @@
 import { CalendarCheck, CarFront, MapPin, ShieldCheck, Star, Wallet } from "lucide-react";
 
 export const HOW_IT_WORKS = [
-  { icon: MapPin, title: "Tell us where", text: "Enter your pickup, destination, date and time." },
+  { icon: MapPin, title: "Tell us where", text: "Choose your pickup airport, then where you're headed, the date and the time." },
   { icon: CarFront, title: "Pick your ride", text: "Compare vehicle categories and see upfront estimates." },
   { icon: CalendarCheck, title: "Get confirmed", text: "A verified driver and vehicle are assigned to your booking." },
   { icon: Wallet, title: "Pay after the ride", text: "Your card is only charged once the trip is completed." },

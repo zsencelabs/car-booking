@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
-import { ArrowRight, CalendarClock, MapPin, Repeat, Zap, type LucideIcon } from "lucide-react";
+import { ArrowRight, CalendarClock, Plane, Repeat, Zap, type LucideIcon } from "lucide-react";
 import { draftToParams } from "@/lib/booking";
+import { AirportSelect } from "@/components/booking/airport-select";
 import { cn } from "@/lib/utils";
 import type { TripType } from "@/types";
 import { EASE, MaskLines } from "./reveal";
@@ -271,26 +272,25 @@ function RouteArt({ type, reduce }: { type: TripType; reduce: boolean }) {
 
 function QuickBook({ type, cta }: { type: TripType; cta: string }) {
   const router = useRouter();
-  const [pickup, setPickup] = useState("");
+  const [pickupCode, setPickupCode] = useState<string>();
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        const p = pickup.trim();
-        router.push(`/book?${draftToParams({ tripType: type, ...(p ? { pickup: p } : {}) }).toString()}`);
+        router.push(`/book?${draftToParams({ tripType: type, pickupCode }).toString()}`);
       }}
       className="mt-5 flex flex-col gap-2 rounded-2xl border border-white/10 bg-background/60 p-1.5 focus-within:ring-2 focus-within:ring-ring/50 sm:flex-row sm:items-center sm:rounded-full sm:pl-5"
     >
-      <label className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 sm:px-0">
-        <MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-        <span className="sr-only">Pickup location</span>
-        <input
-          value={pickup}
-          onChange={(e) => setPickup(e.target.value)}
-          placeholder="Enter pickup location"
-          className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+      <div className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-2 sm:px-0">
+        <Plane className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <label htmlFor={`quick-pickup-${type}`} className="sr-only">Pickup airport</label>
+        <AirportSelect
+          id={`quick-pickup-${type}`} value={pickupCode} onChange={(a) => setPickupCode(a?.code)}
+          placeholder="Choose your pickup airport"
+          inputClassName="w-full min-w-0 truncate bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          listClassName="mt-3"
         />
-      </label>
+      </div>
       <motion.button
         type="submit"
         whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
-import { ArrowRight, MapPin } from "lucide-react";
+import { ArrowRight, Plane } from "lucide-react";
+import { AirportSelect } from "@/components/booking/airport-select";
 import { MaskLines } from "./reveal";
 
 export function FinalCta() {
   const router = useRouter();
-  const [pickup, setPickup] = useState("");
+  const [pickupCode, setPickupCode] = useState<string>();
 
   return (
     <section className="dark relative isolate overflow-hidden bg-background py-28 text-foreground md:py-40">
@@ -32,20 +33,21 @@ export function FinalCta() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            const q = pickup.trim() ? `?pickup=${encodeURIComponent(pickup.trim())}` : "";
+            const q = pickupCode ? `?pickupCode=${pickupCode}` : "";
             router.push(`/book${q}`);
           }}
           className="mx-auto mt-10 flex max-w-lg items-center gap-2 rounded-full border bg-card p-1.5 pl-5 shadow-2xl shadow-black/40 focus-within:ring-2 focus-within:ring-ring/50"
         >
-          <MapPin className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <label htmlFor="cta-pickup" className="sr-only">Pickup address</label>
-          <input
-            id="cta-pickup"
-            value={pickup}
-            onChange={(e) => setPickup(e.target.value)}
-            placeholder="Enter pickup address"
-            className="min-w-0 flex-1 bg-transparent py-2 text-base outline-none placeholder:text-muted-foreground"
-          />
+          <Plane className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <label htmlFor="cta-pickup" className="sr-only">Pickup airport</label>
+          <div className="min-w-0 flex-1 text-left">
+            <AirportSelect
+              id="cta-pickup" value={pickupCode} onChange={(a) => setPickupCode(a?.code)}
+              placeholder="Choose your pickup airport"
+              inputClassName="w-full min-w-0 truncate bg-transparent py-2 text-base outline-none placeholder:text-muted-foreground"
+              listClassName="mt-3"
+            />
+          </div>
           <button type="submit" className="group inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90">
             <span className="hidden sm:inline">See prices</span>
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />

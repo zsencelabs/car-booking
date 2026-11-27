@@ -3,13 +3,15 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeftRight, ArrowRight, ArrowUpDown, CalendarDays, Clock, Minus, Plus, Search, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, Minus, Plus, Search, Users } from "lucide-react";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { draftFromParams, draftToParams, MAX_PASSENGERS, TRIP_TYPES } from "@/lib/booking";
 import { AddressInput, addressProblem, type PlaceValue } from "./address-input";
+import { AirportSelect } from "./airport-select";
+import { airportAddress, type Airport } from "@/lib/airports";
 import type { BookingDraft, TripType } from "@/types";
 
 /** Scheduled rides must be booked at least this far ahead (matches the API). */
@@ -53,12 +55,11 @@ export function QuickBookForm({
   const router = useRouter();
   const [draft, setDraft] = useState<BookingDraft>(initial ?? draftFromParams(new URLSearchParams()));
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [swaps, setSwaps] = useState(0);
   const [today, setToday] = useState<string>();
   const set = <K extends keyof BookingDraft>(k: K, v: BookingDraft[K]) => setDraft((d) => ({ ...d, [k]: v }));
-  const pickupValue: PlaceValue = { address: draft.pickup, lat: draft.pickupLat, lng: draft.pickupLng };
   const destinationValue: PlaceValue = { address: draft.destination, lat: draft.destinationLat, lng: draft.destinationLng };
-  const setPickup = (v: PlaceValue) => setDraft((d) => ({ ...d, pickup: v.address, pickupLat: v.lat, pickupLng: v.lng }));
+  const setPickup = (a: Airport | undefined) =>
+    setDraft((d) => ({ ...d, pickupCode: a?.code, pickup: a ? airportAddress(a) : "", pickupLat: a?.lat, pickupLng: a?.lng }));
   const setDestination = (v: PlaceValue) => setDraft((d) => ({ ...d, destination: v.address, destinationLat: v.lat, destinationLng: v.lng }));
   const scheduled = draft.tripType !== "immediate";
   const locationError = errors.pickup ?? errors.destination;
@@ -76,7 +77,7 @@ export function QuickBookForm({
     e.preventDefault();
     const res = schema.safeParse(draft);
     const found: Record<string, string> = res.success ? {} : Object.fromEntries(res.error.issues.map((i) => [String(i.path[0]), i.message]));
-    const pickupError = addressProblem(pickupValue, "pickup address");
+    const pickupError = draft.pickupCode ? null : "Choose a pickup airport";
     const destinationError = addressProblem(destinationValue, "destination");
     if (pickupError) found.pickup = pickupError;
     if (destinationError) found.destination = destinationError;
@@ -87,15 +88,6 @@ export function QuickBookForm({
     setErrors({});
     const at = draft.tripType === "immediate" ? undefined : new Date(`${draft.date}T${draft.time}`).toISOString();
     router.push(`/book/vehicles?${draftToParams({ ...draft, at }).toString()}`);
-  }
-
-  function swap() {
-    setDraft((d) => ({
-      ...d,
-      pickup: d.destination, pickupLat: d.destinationLat, pickupLng: d.destinationLng,
-      destination: d.pickup, destinationLat: d.pickupLat, destinationLng: d.pickupLng,
-    }));
-    setSwaps((n) => n + 1);
   }
 
   function pickTripType(v: TripType) {
@@ -129,26 +121,15 @@ export function QuickBookForm({
 
         {/* the bar */}
         <div className="flex flex-col rounded-3xl border bg-card p-1.5 text-left shadow-2xl shadow-black/40 md:h-[72px] md:flex-row md:items-stretch md:rounded-[26px]">
-          <BarSegment id="pickup-bar" label="Pickup" invalid={!!errors.pickup} marker={<span className="size-2.5 rounded-full border-2 border-foreground" />} className="md:flex-[1.1]">
-            <AddressInput
-              id="pickup-bar" value={pickupValue} onChange={setPickup}
-              placeholder="Pickup location" invalid={!!errors.pickup}
-              inputClassName="w-full bg-transparent pr-6 text-[15px] outline-none placeholder:text-muted-foreground"
+          <BarSegment id="pickup-bar" label="Pickup airport" invalid={!!errors.pickup} marker={<span className="size-2.5 rounded-full border-2 border-foreground" />} className="md:flex-[1.1]">
+            <AirportSelect
+              id="pickup-bar" value={draft.pickupCode} onChange={setPickup}
+              placeholder="Choose an airport" invalid={!!errors.pickup}
+              inputClassName="w-full truncate bg-transparent pr-2 text-[15px] outline-none placeholder:text-muted-foreground"
             />
           </BarSegment>
 
-          {/* swap, sitting on the divider */}
-          <div className="relative z-10 h-px bg-border mx-4 md:mx-0 md:my-3 md:h-auto md:w-px">
-            <motion.button
-              type="button" onClick={swap} aria-label="Swap pickup and destination"
-              animate={{ rotate: swaps * 180 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="absolute right-2 top-0 -mt-4 grid size-8 place-items-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground md:left-0 md:right-auto md:top-1/2 md:-ml-4"
-            >
-              <ArrowUpDown className="size-3.5 md:hidden" />
-              <ArrowLeftRight className="hidden size-3.5 md:block" />
-            </motion.button>
-          </div>
+          <span aria-hidden className="mx-4 h-px bg-border md:mx-0 md:my-3 md:h-auto md:w-px" />
 
           <BarSegment id="destination-bar" label="Drop-off" invalid={!!errors.destination} marker={<span className="size-2.5 rounded-[3px] bg-foreground" />} className="md:flex-[1.1]">
             <AddressInput
@@ -223,7 +204,7 @@ export function QuickBookForm({
         })}
       </div>
 
-      {/* pickup → destination */}
+      {/* pickup airport → destination */}
       <div>
         <div
           className={cn(
@@ -236,28 +217,19 @@ export function QuickBookForm({
           <span aria-hidden className="pointer-events-none absolute left-[22px] top-[35px] h-[32px] w-px bg-foreground/30" />
           <span aria-hidden className="pointer-events-none absolute left-[18px] top-[70px] size-2.5 rounded-[3px] bg-foreground" />
 
-          <label htmlFor="pickup" className="sr-only">Pickup</label>
-          <AddressInput
-            id="pickup" value={pickupValue} onChange={setPickup}
-            placeholder="Pickup location" invalid={!!errors.pickup}
-            inputClassName="h-14 w-full rounded-t-xl bg-transparent pl-11 pr-14 text-[15px] outline-none placeholder:text-muted-foreground"
+          <label htmlFor="pickup" className="sr-only">Pickup airport</label>
+          <AirportSelect
+            id="pickup" value={draft.pickupCode} onChange={setPickup}
+            placeholder="Pickup airport" invalid={!!errors.pickup}
+            inputClassName="h-14 w-full truncate rounded-t-xl bg-transparent pl-11 pr-4 text-[15px] outline-none placeholder:text-muted-foreground"
           />
-          <div className="ml-11 mr-14 border-t" />
+          <div className="ml-11 mr-4 border-t" />
           <label htmlFor="destination" className="sr-only">Destination</label>
           <AddressInput
             id="destination" value={destinationValue} onChange={setDestination}
             placeholder="Where to?" invalid={!!errors.destination}
-            inputClassName="h-14 w-full rounded-b-xl bg-transparent pl-11 pr-14 text-[15px] outline-none placeholder:text-muted-foreground"
+            inputClassName="h-14 w-full rounded-b-xl bg-transparent pl-11 pr-10 text-[15px] outline-none placeholder:text-muted-foreground"
           />
-
-          <motion.button
-            type="button" onClick={swap} aria-label="Swap pickup and destination"
-            animate={{ rotate: swaps * 180 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="absolute right-3 top-1/2 -mt-[18px] grid size-9 place-items-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:text-foreground"
-          >
-            <ArrowUpDown className="size-4" />
-          </motion.button>
         </div>
         {locationError && <p role="alert" className="mt-1.5 text-xs text-destructive">{locationError}</p>}
       </div>

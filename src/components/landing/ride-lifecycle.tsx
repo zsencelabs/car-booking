@@ -95,8 +95,8 @@ function PhoneMock({ steps, active }: { steps: readonly Step[]; active: number }
         </div>
 
         <div className="space-y-3 border-t p-5 text-sm">
-          <Row label="Pickup" value="1 Ferry Building, SF" />
-          <Row label="Drop-off" value="Oracle Park, SF" />
+          <Row label="Pickup" value="LAX, 1 World Way" />
+          <Row label="Drop-off" value="Santa Monica Pier" />
         </div>
 
         <AnimatePresence initial={false}>
